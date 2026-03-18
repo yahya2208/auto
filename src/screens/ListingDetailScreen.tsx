@@ -45,10 +45,18 @@ const ListingDetailScreen = () => {
   if (!listing) return <div style={{textAlign: 'center', marginTop: '50px'}}>لم يتم العثور على الإعلان.</div>;
 
   const handleCall = () => {
+    if (!user) {
+      navigate(`/register?follow=${listing.user_id}`);
+      return;
+    }
     window.location.href = `tel:${listing.profiles.phone_number}`;
   };
 
   const handleWhatsApp = () => {
+    if (!user) {
+      navigate(`/register?follow=${listing.user_id}`);
+      return;
+    }
     const phone = listing.profiles.phone_number.replace(/^0/, '+213');
     window.location.href = `https://wa.me/${phone}?text=مرحباً، أنا مهتم بإعلانك (${listing.title}) على كوورتي Courtier.`;
   };

@@ -69,7 +69,14 @@ const SellerProfileScreen = () => {
   }, [qrToken, user?.id]);
 
   const handleFollow = async () => {
-    if (!user || !seller || user.id === seller.id) return;
+    if (!seller || user?.id === seller.id) return;
+    
+    if (!user) {
+      // User is not logged in. Redirect to register and pass the seller id so they auto-follow
+      navigate(`/register?follow=${seller.id}`);
+      return;
+    }
+
     setFollowLoading(true);
 
     try {
@@ -148,14 +155,21 @@ const SellerProfileScreen = () => {
               {isFollowing ? <><UserCheck size={18} /> متابَع</> : <><UserPlus size={18} /> متابعة</>}
             </button>
           )}
-          <a href={`tel:${seller.phone_number}`} style={{
+          <button onClick={() => {
+            if (!user) {
+              navigate(`/register?follow=${seller.id}`);
+            } else {
+              window.location.href = `tel:${seller.phone_number}`;
+            }
+          }} style={{
             padding: '12px 24px', borderRadius: '12px', fontWeight: 'bold', fontSize: '0.95rem',
             background: 'linear-gradient(90deg, #38ef7d, #11998e)',
+            border: 'none', cursor: 'pointer',
             color: '#fff', textDecoration: 'none',
             display: 'flex', alignItems: 'center', gap: '8px',
           }}>
             <Phone size={18} /> اتصال
-          </a>
+          </button>
         </div>
       </div>
 

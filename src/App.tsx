@@ -54,11 +54,18 @@ const MainLayout = ({ children }: { children: React.ReactNode }) => {
   );
 };
 
-// Protect Routes
+// Protect Routes (Requires Login)
 const PrivateRoute = ({ children }: { children: React.ReactNode }) => {
   const { session, loading } = useAuthStore();
   if (loading) return <div className="app-container" style={{ justifyContent: 'center', alignItems: 'center', display: 'flex' }}>جاري التحميل...</div>;
   if (!session) return <Navigate to="/login" replace />;
+  return <MainLayout>{children}</MainLayout>;
+};
+
+// Public Routes that use the Main Layout
+const PublicHybridRoute = ({ children }: { children: React.ReactNode }) => {
+  const { loading } = useAuthStore();
+  if (loading) return <div className="app-container" style={{ justifyContent: 'center', alignItems: 'center', display: 'flex' }}>جاري التحميل...</div>;
   return <MainLayout>{children}</MainLayout>;
 };
 
@@ -92,16 +99,16 @@ function App() {
         <Route path="/login" element={<LoginScreen />} />
         <Route path="/register" element={<RegisterScreen />} />
         
-        {/* Public/Protected Hybrid */}
-        <Route path="/" element={<PrivateRoute><HomeScreen /></PrivateRoute>} />
+        {/* Public/Protected Hybrid (Viewable by anyone) */}
+        <Route path="/" element={<PublicHybridRoute><HomeScreen /></PublicHybridRoute>} />
+        <Route path="/listing/:id" element={<PublicHybridRoute><ListingDetailScreen /></PublicHybridRoute>} />
+        <Route path="/seller/:qrToken" element={<PublicHybridRoute><SellerProfileScreen /></PublicHybridRoute>} />
+
+        {/* Private Routes (Require Login) */}
         <Route path="/add" element={<PrivateRoute><AddListingScreen /></PrivateRoute>} />
         <Route path="/profile" element={<PrivateRoute><ProfileScreen /></PrivateRoute>} />
         <Route path="/profile/edit" element={<PrivateRoute><EditProfileScreen /></PrivateRoute>} />
         <Route path="/favorites" element={<PrivateRoute><FavoritesScreen /></PrivateRoute>} />
-        
-        {/* Detailed Views */}
-        <Route path="/listing/:id" element={<PrivateRoute><ListingDetailScreen /></PrivateRoute>} />
-        <Route path="/seller/:qrToken" element={<PrivateRoute><SellerProfileScreen /></PrivateRoute>} />
       </Routes>
     </Router>
   );

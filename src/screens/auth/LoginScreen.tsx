@@ -1,13 +1,17 @@
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate, Link, useLocation } from 'react-router-dom';
 import { Eye, EyeOff, LogIn } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import { loginSchema, LoginForm } from '../../utils/validators';
 
 const LoginScreen = () => {
   const navigate = useNavigate();
+  const location = useLocation();
+  const queryParams = new URLSearchParams(location.search);
+  const followSellerId = queryParams.get('follow');
+  
   const [showPassword, setShowPassword] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
   const [loading, setLoading] = useState(false);
@@ -34,6 +38,13 @@ const LoginScreen = () => {
         setErrorMsg('خطأ: ' + error.message);
       }
     } else {
+      if (followSellerId) {
+        try {
+          await (supabase as any).rpc('follow_user', { target_user_id: followSellerId });
+        } catch (e) {
+          console.error('Failed to auto-follow:', e);
+        }
+      }
       navigate('/');
     }
     setLoading(false);
@@ -92,7 +103,7 @@ const LoginScreen = () => {
 
         <div style={{ textAlign: 'center', marginTop: '20px', fontSize: '0.9rem' }}>
           <span className="text-secondary">ليس لديك حساب؟ </span>
-          <Link to="/register" style={{ color: 'var(--color-electric)', textDecoration: 'none', fontWeight: 'bold' }}>سجل الآن</Link>
+          <Link to={`/register${location.search}`} style={{ color: 'var(--color-electric)', textDecoration: 'none', fontWeight: 'bold' }}>سجل الآن</Link>
         </div>
       </div>
     </div>

@@ -1,16 +1,19 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate, Link, useLocation } from 'react-router-dom';
 import { Eye, EyeOff, UserPlus } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import { registerSchema, RegisterForm } from '../../utils/validators';
-import { QRCodeSVG } from 'qrcode.react';
 
 import { WILAYAS } from '../../data';
 
 const RegisterScreen = () => {
   const navigate = useNavigate();
+  const location = useLocation();
+  const queryParams = new URLSearchParams(location.search);
+  const followSellerId = queryParams.get('follow');
+
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
@@ -50,7 +53,17 @@ const RegisterScreen = () => {
     }
 
     if (authData.user) {
-      // Navigate to home! The backend trigger will handle creating the profile.
+      // If we have a follow id, try to auto follow
+      if (followSellerId) {
+        try {
+          // Wait a bit to ensure the backend trigger created the profile
+          await new Promise(r => setTimeout(r, 1000));
+          await (supabase as any).rpc('follow_user', { target_user_id: followSellerId });
+        } catch (e) {
+          console.error('Failed to auto-follow:', e);
+        }
+      }
+      
       navigate('/');
     }
     setLoading(false);
@@ -144,7 +157,7 @@ const RegisterScreen = () => {
 
         <div style={{ textAlign: 'center', marginTop: '20px', fontSize: '0.9rem' }}>
           <span className="text-secondary">لديك حساب بالفعل؟ </span>
-          <Link to="/login" style={{ color: 'var(--color-electric)', textDecoration: 'none', fontWeight: 'bold' }}>تسجيل الدخول</Link>
+          <Link to={`/login${location.search}`} style={{ color: 'var(--color-electric)', textDecoration: 'none', fontWeight: 'bold' }}>تسجيل الدخول</Link>
         </div>
       </div>
     </div>
