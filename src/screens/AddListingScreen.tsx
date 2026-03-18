@@ -141,12 +141,14 @@ const AddListingScreen = () => {
         // Use raw fetch for media insert
         const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
         const SUPABASE_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY;
+        const { data: sessionData } = await supabase.auth.getSession();
+        const token = sessionData.session?.access_token || SUPABASE_KEY;
         
         await fetch(`${SUPABASE_URL}/rest/v1/listing_media`, {
           method: 'POST',
           headers: {
             'apikey': SUPABASE_KEY,
-            'Authorization': `Bearer ${SUPABASE_KEY}`,
+            'Authorization': `Bearer ${token}`,
             'Content-Type': 'application/json',
             'Prefer': 'return=minimal',
           },
@@ -218,12 +220,14 @@ const AddListingScreen = () => {
       // Use raw fetch to insert listing - this avoids all supabase-js type issues
       const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
       const SUPABASE_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY;
+      const { data: sessionData } = await supabase.auth.getSession();
+      const token = sessionData.session?.access_token || SUPABASE_KEY;
 
       const insertRes = await fetch(`${SUPABASE_URL}/rest/v1/listings`, {
         method: 'POST',
         headers: {
           'apikey': SUPABASE_KEY,
-          'Authorization': `Bearer ${SUPABASE_KEY}`,
+          'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json',
           'Prefer': 'return=representation',
         },

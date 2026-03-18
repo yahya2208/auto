@@ -58,6 +58,27 @@ export const useAuthStore = create<AuthState>((set) => ({
             followers_count: 0,
             created_at: new Date().toISOString(),
           };
+
+          // Try to actually insert it into the database to satisfy foreign key constraints!
+          try {
+            const { data: sessionData } = await supabase.auth.getSession();
+            const token = sessionData.session?.access_token || import.meta.env.VITE_SUPABASE_ANON_KEY;
+
+            await fetch(`${import.meta.env.VITE_SUPABASE_URL}/rest/v1/profiles`, {
+              method: 'POST',
+              headers: {
+                'apikey': import.meta.env.VITE_SUPABASE_ANON_KEY,
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json',
+                'Prefer': 'resolution=merge-duplicates'
+              },
+              body: JSON.stringify(fallback)
+            });
+            console.log('[AUTH] Fallback profile saved to DB automatically.');
+          } catch (insertErr) {
+            console.error('[AUTH] Failed to save fallback profile to DB:', insertErr);
+          }
+
           set({ profile: fallback });
           console.log('[AUTH] Fallback profile created');
         }
