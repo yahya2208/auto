@@ -16,8 +16,8 @@ export const useListingStore = create<ListingState>((set) => ({
   fetchListings: async () => {
     set({ loading: true });
     try {
-      const { data, error } = await supabase
-        .from('listings')
+      const { data, error } = await (supabase
+        .from('listings') as any)
         .select(`
           *,
           profiles:user_id (full_name, phone_number, wilaya, avatar_url),
@@ -27,9 +27,10 @@ export const useListingStore = create<ListingState>((set) => ({
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-      set({ listings: data as unknown as ListingWithDetails[] });
+      set({ listings: (data || []) as ListingWithDetails[] });
     } catch (error) {
       console.error('Error fetching listings:', error);
+      set({ listings: [] });
     } finally {
       set({ loading: false });
     }
@@ -37,8 +38,8 @@ export const useListingStore = create<ListingState>((set) => ({
 
   fetchUserListings: async (userId: string) => {
     try {
-      const { data, error } = await supabase
-        .from('listings')
+      const { data, error } = await (supabase
+        .from('listings') as any)
         .select(`
           *,
           profiles:user_id (full_name, phone_number, wilaya, avatar_url),
@@ -48,7 +49,7 @@ export const useListingStore = create<ListingState>((set) => ({
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-      return data as unknown as ListingWithDetails[];
+      return (data || []) as ListingWithDetails[];
     } catch (error) {
       console.error('Error fetching user listings:', error);
       return [];

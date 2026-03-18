@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useNavigate, Link } from 'react-router-dom';
@@ -20,12 +20,19 @@ const LoginScreen = () => {
     setLoading(true);
     setErrorMsg('');
     const { error } = await supabase.auth.signInWithPassword({
-      email: data.email,
+      email: data.email.trim(),
       password: data.password,
     });
 
     if (error) {
-      setErrorMsg(error.message);
+      console.error('Login Error details:', error);
+      if (error.message === 'Invalid login credentials') {
+        setErrorMsg('البريد الإلكتروني أو كلمة المرور غير صحيحة.');
+      } else if (error.message.includes('Email not confirmed')) {
+        setErrorMsg('يرجى تأكيد بريدك الإلكتروني أولاً (راجع صندوق الوارد).');
+      } else {
+        setErrorMsg('خطأ: ' + error.message);
+      }
     } else {
       navigate('/');
     }
@@ -38,9 +45,9 @@ const LoginScreen = () => {
       <div className="orb orb-blue"></div>
       
       <div style={{ zIndex: 10, textAlign: 'center', marginBottom: '30px' }}>
-        <div className="logo-icon" style={{ margin: '0 auto 10px auto', width: '60px', height: '60px', fontSize: '30px' }}>🚗</div>
-        <h1 style={{ fontSize: '1.5rem', fontWeight: 800 }}>GHAZA AUTO</h1>
-        <p className="text-secondary">تسجيل الدخول للمنصة</p>
+        <div className="logo-icon" style={{ margin: '0 auto 10px auto', width: '60px', height: '60px', fontSize: '30px' }}>🤝</div>
+        <h1 style={{ fontSize: '1.5rem', fontWeight: 800 }}>COURTIER</h1>
+        <p className="text-secondary">كوورتي - وسيطك الموثوق</p>
       </div>
 
       <div className="glass-card" style={{ zIndex: 10 }}>

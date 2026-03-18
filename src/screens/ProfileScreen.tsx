@@ -1,13 +1,15 @@
-import React, { useEffect } from 'react';
+import { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useAuthStore } from '../store/authStore';
 import { QRCodeSVG } from 'qrcode.react';
 import { LogOut, MapPin, Phone, Link } from 'lucide-react';
 import { useListingStore } from '../store/listingStore';
 
 const ProfileScreen = () => {
+  const navigate = useNavigate();
   const { profile, signOut } = useAuthStore();
   const { fetchUserListings } = useListingStore();
-  const [totalListings, setTotalListings] = React.useState(0);
+  const [totalListings, setTotalListings] = useState(0);
 
   useEffect(() => {
     if (profile?.id) {
@@ -24,9 +26,14 @@ const ProfileScreen = () => {
     <div style={{ padding: '20px 20px 100px 20px', overflowY: 'auto' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
         <h2 style={{ fontSize: '1.5rem', fontWeight: 800 }}>حسابي</h2>
-        <button onClick={signOut} style={{ background: 'transparent', border: '1px solid var(--color-glass-border)', color: 'var(--color-accent)', padding: '8px 12px', borderRadius: '10px', display: 'flex', gap: '5px' }}>
-          خروج <LogOut size={18} />
-        </button>
+        <div style={{ display: 'flex', gap: '10px' }}>
+          <button onClick={() => navigate('/profile/edit')} style={{ background: 'transparent', border: '1px solid var(--color-glass-border)', color: 'var(--color-electric)', padding: '8px 12px', borderRadius: '10px', display: 'flex', gap: '5px' }}>
+            تعديل
+          </button>
+          <button onClick={signOut} style={{ background: 'transparent', border: '1px solid var(--color-glass-border)', color: 'var(--color-accent)', padding: '8px 12px', borderRadius: '10px', display: 'flex', gap: '5px' }}>
+            خروج <LogOut size={18} />
+          </button>
+        </div>
       </div>
 
       {/* User Info Card */}

@@ -7,7 +7,7 @@ import { supabase } from '../../lib/supabase';
 import { registerSchema, RegisterForm } from '../../utils/validators';
 import { QRCodeSVG } from 'qrcode.react';
 
-const WILAYAS = ["أدرار", "الشلف", "الأغواط", "أم البواقي", "باتنة", "بجاية", "الجزائر", "عنابة", "وهران"]; // عينة صغيرة
+import { WILAYAS } from '../../data';
 
 const RegisterScreen = () => {
   const navigate = useNavigate();
@@ -63,7 +63,7 @@ const RegisterScreen = () => {
       
       <div style={{ zIndex: 10, textAlign: 'center', marginBottom: '20px', marginTop: '20px' }}>
         <h1 style={{ fontSize: '1.5rem', fontWeight: 800 }}>إنشاء حساب جديد</h1>
-        <p className="text-secondary">انضم إلى مجتمع Ghaza Auto</p>
+        <p className="text-secondary">انضم إلى مجتمع كوورتي - Courtier</p>
       </div>
 
       <div className="glass-card" style={{ zIndex: 10, padding: '25px 20px' }}>

@@ -1,20 +1,25 @@
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useListingStore } from '../store/listingStore';
-import { Car, Bike, Home, Link } from 'lucide-react';
+import { Car, Bike, Home, Search } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
 const HomeScreen = () => {
   const { listings, fetchListings, loading } = useListingStore();
   const [filter, setFilter] = useState<'all' | 'car' | 'motorcycle' | 'real_estate'>('all');
+  const [searchQuery, setSearchQuery] = useState('');
   const navigate = useNavigate();
 
   useEffect(() => {
     fetchListings();
   }, [fetchListings]);
 
-  const filteredListings = filter === 'all' 
-    ? listings 
-    : listings.filter(l => l.category === filter);
+  const filteredListings = listings.filter(l => {
+    const matchesCategory = filter === 'all' || l.category === filter;
+    const matchesSearch = l.title.toLowerCase().includes(searchQuery.toLowerCase()) || 
+                          l.wilaya.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                          (l.car_brand?.toLowerCase().includes(searchQuery.toLowerCase()));
+    return matchesCategory && matchesSearch;
+  });
 
   const getCategoryIcon = (cat: string) => {
     switch (cat) {
@@ -30,8 +35,29 @@ const HomeScreen = () => {
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '20px' }}>
         <div>
           <h2 style={{ fontSize: '1.5rem', fontWeight: 800 }}>اكتشف الإعلانات</h2>
-          <p className="text-secondary">جديد سوق Ghaza Auto</p>
+          <p className="text-secondary">جديد سوق كوورتي - Courtier</p>
         </div>
+      </div>
+
+      {/* Search Bar */}
+      <div style={{ position: 'relative', marginBottom: '20px' }}>
+        <input 
+          type="text" 
+          placeholder="ابحث عن سيارة، عقار، أو ولاية..." 
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+          style={{
+            width: '100%',
+            padding: '12px 15px 12px 40px',
+            borderRadius: '12px',
+            border: '1px solid var(--color-glass-border)',
+            background: 'var(--color-glass-bg)',
+            color: '#fff',
+            outline: 'none',
+            fontSize: '0.95rem'
+          }}
+        />
+        <Search size={20} style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: 'var(--color-text-secondary)' }} />
       </div>
 
       <div style={{ display: 'flex', gap: '10px', marginBottom: '20px', overflowX: 'auto', paddingBottom: '10px' }} className="no-scrollbar">

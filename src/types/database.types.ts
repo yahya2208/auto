@@ -10,6 +10,7 @@ export interface Database {
           avatar_url: string | null;
           qr_code_token: string;
           total_qr_scans: number;
+          followers_count: number;
           created_at: string;
         };
         Insert: {
@@ -20,6 +21,7 @@ export interface Database {
           avatar_url?: string | null;
           qr_code_token?: string;
           total_qr_scans?: number;
+          followers_count?: number;
           created_at?: string;
         };
         Update: {
@@ -30,6 +32,7 @@ export interface Database {
           avatar_url?: string | null;
           qr_code_token?: string;
           total_qr_scans?: number;
+          followers_count?: number;
         };
       };
       listings: {
@@ -47,7 +50,6 @@ export interface Database {
           is_negotiable: boolean;
           is_active: boolean;
           view_count: number;
-          // Car specific
           car_brand: string | null;
           car_model: string | null;
           car_year: number | null;
@@ -55,11 +57,9 @@ export interface Database {
           fuel_type: string | null;
           transmission: string | null;
           condition: string | null;
-          // Moto specific
           moto_brand: string | null;
           moto_model: string | null;
           engine_cc: number | null;
-          // Real Estate specific
           property_type: string | null;
           property_area_m2: number | null;
           property_rooms: number | null;
@@ -70,8 +70,8 @@ export interface Database {
           created_at: string;
           updated_at: string;
         };
-        Insert: any; // Simplified for this example
-        Update: any;
+        Insert: Record<string, any>;
+        Update: Record<string, any>;
       };
       listing_media: {
         Row: {
@@ -84,19 +84,29 @@ export interface Database {
           display_order: number;
           created_at: string;
         };
-        Insert: any;
-        Update: any;
+        Insert: Record<string, any>;
+        Update: Record<string, any>;
+      };
+      follows: {
+        Row: {
+          id: string;
+          follower_id: string;
+          following_id: string;
+          created_at: string;
+        };
+        Insert: Record<string, any>;
+        Update: Record<string, any>;
       };
       qr_scans: {
         Row: {
           id: string;
-          user_id: string; // the seller who was scanned
+          user_id: string;
           scanner_ip: string | null;
           scanned_at: string;
         };
-        Insert: any;
-        Update: any;
-      }
+        Insert: Record<string, any>;
+        Update: Record<string, any>;
+      };
     };
     Views: {};
     Functions: {
@@ -106,6 +116,14 @@ export interface Database {
       };
       increment_view_count: {
         Args: { listing_id: string };
+        Returns: void;
+      };
+      follow_user: {
+        Args: { target_user_id: string };
+        Returns: void;
+      };
+      unfollow_user: {
+        Args: { target_user_id: string };
         Returns: void;
       };
     };

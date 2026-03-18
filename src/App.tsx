@@ -2,7 +2,7 @@ import React, { useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate, Link } from 'react-router-dom';
 import { useAuthStore } from './store/authStore';
 import { supabase } from './lib/supabase';
-import { Home, Search, PlusCircle, Heart, User, Car } from 'lucide-react';
+import { Home, Search, PlusCircle, Heart, User } from 'lucide-react';
 
 // Screens
 import LoginScreen from './screens/auth/LoginScreen';
@@ -10,6 +10,8 @@ import RegisterScreen from './screens/auth/RegisterScreen';
 import HomeScreen from './screens/HomeScreen';
 import AddListingScreen from './screens/AddListingScreen';
 import ProfileScreen from './screens/ProfileScreen';
+import EditProfileScreen from './screens/EditProfileScreen';
+import FavoritesScreen from './screens/FavoritesScreen';
 import SellerProfileScreen from './screens/SellerProfileScreen';
 import ListingDetailScreen from './screens/ListingDetailScreen';
 
@@ -39,7 +41,7 @@ const MainLayout = ({ children }: { children: React.ReactNode }) => {
             <PlusCircle size={28} color="#fff" />
           </div>
         </Link>
-        <Link to="/" className="nav-item">
+        <Link to="/favorites" className={`nav-item ${window.location.pathname === '/favorites' ? 'active' : ''}`}>
           <Heart size={24} />
           <span>المفضلة</span>
         </Link>
@@ -94,6 +96,8 @@ function App() {
         <Route path="/" element={<PrivateRoute><HomeScreen /></PrivateRoute>} />
         <Route path="/add" element={<PrivateRoute><AddListingScreen /></PrivateRoute>} />
         <Route path="/profile" element={<PrivateRoute><ProfileScreen /></PrivateRoute>} />
+        <Route path="/profile/edit" element={<PrivateRoute><EditProfileScreen /></PrivateRoute>} />
+        <Route path="/favorites" element={<PrivateRoute><FavoritesScreen /></PrivateRoute>} />
         
         {/* Detailed Views */}
         <Route path="/listing/:id" element={<PrivateRoute><ListingDetailScreen /></PrivateRoute>} />

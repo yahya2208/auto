@@ -1,77 +1,68 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
 import { useAuthStore } from '../store/authStore';
-import { Upload, Camera, X, AlertCircle } from 'lucide-react';
-
-const WILAYAS = [
-  "01 - أدرار", "02 - الشلف", "03 - الأغواط", "04 - أم البواقي", "05 - باتنة",
-  "06 - بجاية", "07 - بسكرة", "08 - بشار", "09 - البليدة", "10 - البويرة",
-  "11 - تمنراست", "12 - تبسة", "13 - تلمسان", "14 - تيارت", "15 - تيزي وزو",
-  "16 - الجزائر", "17 - الجلفة", "18 - جيجل", "19 - سطيف", "20 - سعيدة",
-  "21 - سكيكدة", "22 - سيدي بلعباس", "23 - عنابة", "24 - قالمة", "25 - قسنطينة",
-  "26 - المدية", "27 - مستغانم", "28 - المسيلة", "29 - معسكر", "30 - ورقلة",
-  "31 - وهران", "32 - البيض", "33 - إليزي", "34 - برج بوعريريج", "35 - بومرداس",
-  "36 - الطارف", "37 - تندوف", "38 - تيسمسيلت", "39 - الوادي", "40 - خنشلة",
-  "41 - سوق أهراس", "42 - تيبازة", "43 - ميلة", "44 - عين الدفلى", "45 - النعامة",
-  "46 - عين تموشنت", "47 - غرداية", "48 - غليزان",
-  "49 - تيميمون", "50 - برج باجي مختار", "51 - أولاد جلال", "52 - بني عباس",
-  "53 - عين صالح", "54 - عين قزام", "55 - تقرت", "56 - جانت", "57 - المغير", "58 - المنيعة"
-];
+import { Upload, Camera, X, AlertCircle, ArrowLeft, ArrowRight, Check } from 'lucide-react';
+import { WILAYAS, ALL_CAR_BRANDS } from '../data';
 
 const LISTING_TYPES = [
-  { value: 'sell', label: 'بيع' },
-  { value: 'buy', label: 'شراء' },
-  { value: 'exchange', label: 'استبدال' },
+  { value: 'sell', label: 'بيع', emoji: '💰', desc: 'عرض للبيع' },
+  { value: 'buy', label: 'طلب شراء', emoji: '🛒', desc: 'أبحث عن...' },
+  { value: 'exchange', label: 'استبدال', emoji: '🔄', desc: 'مبادلة' },
+];
+
+const CATEGORIES = [
+  { id: 'car', label: 'سيارة', emoji: '🚗', color: '#4facfe' },
+  { id: 'motorcycle', label: 'دراجة', emoji: '🏍️', color: '#e94560' },
+  { id: 'real_estate', label: 'عقار', emoji: '🏠', color: '#38ef7d' },
 ];
 
 const FUEL_TYPES = [
-  { value: 'essence', label: 'بنزين' },
-  { value: 'diesel', label: 'مازوت' },
-  { value: 'electrique', label: 'كهربائي' },
-  { value: 'hybride', label: 'هجين' },
-  { value: 'gpl', label: 'غاز GPL' },
+  { value: 'essence', label: 'بنزين', emoji: '⛽' },
+  { value: 'diesel', label: 'مازوت', emoji: '🛢️' },
+  { value: 'electrique', label: 'كهربائي', emoji: '⚡' },
+  { value: 'hybride', label: 'هجين', emoji: '🔋' },
+  { value: 'gpl', label: 'غاز GPL', emoji: '💨' },
 ];
 
 const TRANSMISSION_TYPES = [
-  { value: 'manuelle', label: 'يدوي' },
-  { value: 'automatique', label: 'أوتوماتيك' },
+  { value: 'manuelle', label: 'يدوي', emoji: '🕹️' },
+  { value: 'automatique', label: 'أوتوماتيك', emoji: '🤖' },
 ];
 
 const CONDITION_TYPES = [
-  { value: 'neuf', label: 'جديدة' },
-  { value: 'tres_bon', label: 'جيدة جداً' },
-  { value: 'bon', label: 'جيدة' },
-  { value: 'acceptable', label: 'مقبولة' },
+  { value: 'neuf', label: 'جديدة', emoji: '✨', color: '#38ef7d' },
+  { value: 'tres_bon', label: 'جيدة جداً', emoji: '👍', color: '#4facfe' },
+  { value: 'bon', label: 'جيدة', emoji: '👌', color: '#f7b731' },
+  { value: 'acceptable', label: 'مقبولة', emoji: '🤷', color: '#e94560' },
 ];
 
 const PROPERTY_TYPES = [
-  { value: 'appartement', label: 'شقة' },
-  { value: 'villa', label: 'فيلا' },
-  { value: 'maison', label: 'منزل' },
-  { value: 'terrain', label: 'قطعة أرض' },
-  { value: 'local_commercial', label: 'محل تجاري' },
+  { value: 'appartement', label: 'شقة', emoji: '🏢' },
+  { value: 'villa', label: 'فيلا', emoji: '🏡' },
+  { value: 'maison', label: 'منزل', emoji: '🏠' },
+  { value: 'terrain', label: 'قطعة أرض', emoji: '🌍' },
+  { value: 'local_commercial', label: 'محل تجاري', emoji: '🏪' },
 ];
+
+const TOTAL_STEPS = 4;
 
 const AddListingScreen = () => {
   const { user } = useAuthStore();
   const navigate = useNavigate();
   
+  const [step, setStep] = useState(1);
   const [loading, setLoading] = useState(false);
   const [successMsg, setSuccessMsg] = useState('');
   const [errorMsg, setErrorMsg] = useState('');
+  
+  // Step 1: Category & Type
   const [category, setCategory] = useState<'car'|'motorcycle'|'real_estate'>('car');
   const [listingType, setListingType] = useState('sell');
+  
+  // Step 2: Details
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
-  const [price, setPrice] = useState('');
-  const [isNegotiable, setIsNegotiable] = useState(false);
-  const [wilaya, setWilaya] = useState('16 - الجزائر');
-  const [commune, setCommune] = useState('');
-  const [files, setFiles] = useState<File[]>([]);
-  const [previewUrls, setPreviewUrls] = useState<string[]>([]);
-  
-  // Car fields
   const [carBrand, setCarBrand] = useState('');
   const [carModel, setCarModel] = useState('');
   const [carYear, setCarYear] = useState('');
@@ -79,13 +70,9 @@ const AddListingScreen = () => {
   const [fuelType, setFuelType] = useState('essence');
   const [transmission, setTransmission] = useState('manuelle');
   const [condition, setCondition] = useState('bon');
-
-  // Moto fields
   const [motoBrand, setMotoBrand] = useState('');
   const [motoModel, setMotoModel] = useState('');
   const [engineCC, setEngineCC] = useState('');
-
-  // Real estate fields
   const [propertyType, setPropertyType] = useState('appartement');
   const [area, setArea] = useState('');
   const [rooms, setRooms] = useState('');
@@ -93,6 +80,27 @@ const AddListingScreen = () => {
   const [hasElevator, setHasElevator] = useState(false);
   const [hasParking, setHasParking] = useState(false);
   const [hasGarden, setHasGarden] = useState(false);
+  
+  // Step 3: Price & Location
+  const [price, setPrice] = useState('');
+  const [isNegotiable, setIsNegotiable] = useState(false);
+  const [wilaya, setWilaya] = useState('16 - الجزائر');
+  const [commune, setCommune] = useState('');
+
+  // Step 4: Photos
+  const [files, setFiles] = useState<File[]>([]);
+  const [previewUrls, setPreviewUrls] = useState<string[]>([]);
+
+  // Auto-generate title
+  const autoTitle = () => {
+    if (category === 'car' && carBrand && carModel) {
+      return `${carBrand} ${carModel}${carYear ? ` ${carYear}` : ''}`;
+    }
+    if (category === 'motorcycle' && motoBrand && motoModel) {
+      return `${motoBrand} ${motoModel}`;
+    }
+    return title;
+  };
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files) {
@@ -111,37 +119,53 @@ const AddListingScreen = () => {
 
   const uploadMedia = async (listingId: string): Promise<void> => {
     for (let i = 0; i < files.length; i++) {
-      const file = files[i];
-      const fileExt = file.name.split('.').pop();
-      const isVideo = file.type.startsWith('video/');
-      const fileName = `${listingId}/${Date.now()}_${i}.${fileExt}`;
+      try {
+        const file = files[i];
+        const fileExt = file.name.split('.').pop();
+        const isVideo = file.type.startsWith('video/');
+        const fileName = `${listingId}/${Date.now()}_${i}.${fileExt}`;
 
-      const { error: uploadError } = await supabase.storage
-        .from('listings')
-        .upload(fileName, file);
+        const { error: uploadError } = await supabase.storage
+          .from('listings')
+          .upload(fileName, file);
 
-      if (uploadError) {
-        console.error('خطأ في رفع الملف:', uploadError);
-        continue;
+        if (uploadError) {
+          console.error('خطأ في رفع الملف:', uploadError);
+          continue;
+        }
+
+        const { data: { publicUrl } } = supabase.storage
+          .from('listings')
+          .getPublicUrl(fileName);
+
+        // Use raw fetch for media insert
+        const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
+        const SUPABASE_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY;
+        
+        await fetch(`${SUPABASE_URL}/rest/v1/listing_media`, {
+          method: 'POST',
+          headers: {
+            'apikey': SUPABASE_KEY,
+            'Authorization': `Bearer ${SUPABASE_KEY}`,
+            'Content-Type': 'application/json',
+            'Prefer': 'return=minimal',
+          },
+          body: JSON.stringify({
+            listing_id: listingId,
+            media_type: isVideo ? 'video' : 'image',
+            public_url: publicUrl,
+            storage_path: fileName,
+            is_cover: i === 0,
+            display_order: i,
+          }),
+        });
+      } catch (err) {
+        console.error(`خطأ في رفع الصورة ${i}:`, err);
       }
-
-      const { data: { publicUrl } } = supabase.storage
-        .from('listings')
-        .getPublicUrl(fileName);
-
-      await supabase.from('listing_media').insert({
-        listing_id: listingId,
-        media_type: isVideo ? 'video' : 'image',
-        public_url: publicUrl,
-        storage_path: fileName,
-        is_cover: i === 0,
-        display_order: i,
-      });
     }
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleSubmit = async () => {
     if (!user) { setErrorMsg('يجب تسجيل الدخول أولاً!'); return; }
     if (files.length === 0) { setErrorMsg('يجب إضافة صورة واحدة على الأقل!'); return; }
 
@@ -150,13 +174,14 @@ const AddListingScreen = () => {
     setSuccessMsg('');
 
     try {
-      // بناء كائن البيانات
+      const finalTitle = title || autoTitle() || 'إعلان بدون عنوان';
+      
       const listingPayload: Record<string, any> = {
         user_id: user.id,
         category,
         listing_type: listingType,
-        title,
-        description,
+        title: finalTitle,
+        description: description || finalTitle,
         price: price ? parseFloat(price) : null,
         currency: 'دج',
         wilaya,
@@ -165,22 +190,21 @@ const AddListingScreen = () => {
         is_active: true,
       };
 
-      // إضافة الحقول الخاصة بالفئة
       if (category === 'car') {
-        listingPayload.car_brand = carBrand;
-        listingPayload.car_model = carModel;
+        listingPayload.car_brand = carBrand || null;
+        listingPayload.car_model = carModel || null;
         listingPayload.car_year = carYear ? parseInt(carYear) : null;
         listingPayload.mileage = mileage ? parseInt(mileage) : null;
-        listingPayload.fuel_type = fuelType;
-        listingPayload.transmission = transmission;
-        listingPayload.condition = condition;
+        listingPayload.fuel_type = fuelType || null;
+        listingPayload.transmission = transmission || null;
+        listingPayload.condition = condition || null;
       } else if (category === 'motorcycle') {
-        listingPayload.moto_brand = motoBrand;
-        listingPayload.moto_model = motoModel;
+        listingPayload.moto_brand = motoBrand || null;
+        listingPayload.moto_model = motoModel || null;
         listingPayload.engine_cc = engineCC ? parseInt(engineCC) : null;
-        listingPayload.condition = condition;
+        listingPayload.condition = condition || null;
       } else if (category === 'real_estate') {
-        listingPayload.property_type = propertyType;
+        listingPayload.property_type = propertyType || null;
         listingPayload.property_area_m2 = area ? parseFloat(area) : null;
         listingPayload.property_rooms = rooms ? parseInt(rooms) : null;
         listingPayload.property_floor = floor ? parseInt(floor) : null;
@@ -189,267 +213,501 @@ const AddListingScreen = () => {
         listingPayload.has_garden = hasGarden;
       }
 
-      // 1. إدراج الإعلان في قاعدة البيانات
-      const { data: newListing, error: insertError } = await supabase
-        .from('listings')
-        .insert(listingPayload)
-        .select()
-        .single();
+      console.log('📤 Inserting listing...', listingPayload);
 
-      if (insertError) {
-        throw new Error('فشل إدراج الإعلان: ' + insertError.message);
+      // Use raw fetch to insert listing - this avoids all supabase-js type issues
+      const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
+      const SUPABASE_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY;
+
+      const insertRes = await fetch(`${SUPABASE_URL}/rest/v1/listings`, {
+        method: 'POST',
+        headers: {
+          'apikey': SUPABASE_KEY,
+          'Authorization': `Bearer ${SUPABASE_KEY}`,
+          'Content-Type': 'application/json',
+          'Prefer': 'return=representation',
+        },
+        body: JSON.stringify(listingPayload),
+      });
+
+      const insertData = await insertRes.json();
+      console.log('📥 Insert response:', insertRes.status, insertData);
+
+      if (!insertRes.ok) {
+        const errMsg = insertData?.message || insertData?.error || JSON.stringify(insertData);
+        throw new Error('فشل إدراج الإعلان: ' + errMsg);
       }
 
-      // 2. رفع الصور والفيديوهات
-      if (newListing && files.length > 0) {
-        await uploadMedia(newListing.id);
+      const newListing = Array.isArray(insertData) ? insertData[0] : insertData;
+
+      if (!newListing?.id) {
+        throw new Error('لم يتم إرجاع بيانات الإعلان.');
+      }
+
+      // Upload media
+      if (files.length > 0) {
+        try {
+          console.log('📷 Uploading media...');
+          await uploadMedia(newListing.id);
+          console.log('✅ Done');
+        } catch (uploadErr) {
+          console.error('⚠️ Media upload error:', uploadErr);
+        }
       }
 
       setSuccessMsg('تم نشر الإعلان بنجاح! 🎉');
-      setTimeout(() => navigate('/'), 1500);
+      setTimeout(() => navigate('/'), 2000);
     } catch (err: any) {
-      console.error('Failed to create listing:', err);
+      console.error('❌ Error:', err);
       setErrorMsg(err.message || 'حدث خطأ أثناء إضافة الإعلان!');
     } finally {
       setLoading(false);
     }
   };
 
-  return (
-    <div style={{ padding: '20px 20px 100px 20px', overflowY: 'auto' }}>
-      <div style={{ marginBottom: '20px' }}>
-        <h2 style={{ fontSize: '1.5rem', fontWeight: 800 }}>إضافة إعلان جديد</h2>
-        <p className="text-secondary">انشر ما تريد بيعه بسرعة وبسهولة</p>
+  const canProceed = () => {
+    switch(step) {
+      case 1: return true; // category and type always selected
+      case 2: {
+        if (category === 'car') return carBrand.length > 0;
+        if (category === 'motorcycle') return motoBrand.length > 0;
+        return true;
+      }
+      case 3: return wilaya.length > 0;
+      case 4: return files.length > 0;
+      default: return true;
+    }
+  };
+
+  // ═══════════ RENDER ═══════════
+
+  const renderProgressBar = () => (
+    <div style={{ display: 'flex', gap: '6px', marginBottom: '25px' }}>
+      {Array.from({ length: TOTAL_STEPS }).map((_, i) => (
+        <div key={i} style={{
+          flex: 1, height: '4px', borderRadius: '2px',
+          background: i < step ? 'linear-gradient(90deg, #4facfe, #00f2fe)' : 'rgba(255,255,255,0.1)',
+          transition: 'background 0.5s ease'
+        }} />
+      ))}
+    </div>
+  );
+
+  const renderStep1 = () => (
+    <div style={{ animation: 'fadeInUp 0.4s ease' }}>
+      <h3 style={{ fontSize: '1.4rem', fontWeight: 800, marginBottom: '8px' }}>ماذا تريد أن تفعل؟ 🎯</h3>
+      <p className="text-secondary" style={{ marginBottom: '20px' }}>اختر نوع العملية والفئة</p>
+      
+      {/* Listing Type */}
+      <div style={{ display: 'flex', gap: '10px', marginBottom: '25px' }}>
+        {LISTING_TYPES.map(lt => (
+          <div key={lt.value} onClick={() => setListingType(lt.value)}
+            style={{
+              flex: 1, textAlign: 'center', padding: '15px 8px',
+              border: `2px solid ${listingType === lt.value ? '#4facfe' : 'var(--color-glass-border)'}`,
+              borderRadius: '15px',
+              background: listingType === lt.value ? 'rgba(79, 172, 254, 0.15)' : 'transparent',
+              cursor: 'pointer',
+              transition: 'all 0.3s ease',
+              transform: listingType === lt.value ? 'scale(1.02)' : 'scale(1)',
+            }}>
+            <div style={{ fontSize: '28px', marginBottom: '5px' }}>{lt.emoji}</div>
+            <div style={{ fontWeight: 'bold', fontSize: '0.9rem' }}>{lt.label}</div>
+            <div style={{ fontSize: '0.7rem', color: 'var(--color-text-secondary)', marginTop: '3px' }}>{lt.desc}</div>
+          </div>
+        ))}
       </div>
 
-      {successMsg && <div style={{ background: 'rgba(56, 239, 125, 0.1)', border: '1px solid rgba(56, 239, 125, 0.3)', padding: '12px', borderRadius: '10px', marginBottom: '15px', color: '#38ef7d', textAlign: 'center', fontWeight: 'bold' }}>{successMsg}</div>}
-      {errorMsg && <div style={{ background: 'rgba(233, 69, 96, 0.1)', border: '1px solid rgba(233, 69, 96, 0.3)', padding: '12px', borderRadius: '10px', marginBottom: '15px', color: 'var(--color-accent)', textAlign: 'center', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}><AlertCircle size={18} />{errorMsg}</div>}
-
-      <form onSubmit={handleSubmit} className="glass-card" style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
-        
-        {/* نوع الإعلان (بيع/شراء/استبدال) */}
-        <div>
-          <label style={labelStyle}>نوع العملية</label>
-          <div style={{ display: 'flex', gap: '10px' }}>
-            {LISTING_TYPES.map(lt => (
-              <div key={lt.value} onClick={() => setListingType(lt.value)}
-                style={{ flex: 1, textAlign: 'center', padding: '10px', border: `1px solid ${listingType === lt.value ? 'var(--color-electric)' : 'var(--color-glass-border)'}`, borderRadius: '10px', background: listingType === lt.value ? 'rgba(79, 172, 254, 0.1)' : 'transparent', cursor: 'pointer', fontWeight: listingType === lt.value ? 'bold' : 'normal' }}>
-                {lt.label}
-              </div>
-            ))}
+      {/* Category */}
+      <div style={{ display: 'flex', gap: '10px' }}>
+        {CATEGORIES.map(c => (
+          <div key={c.id} onClick={() => setCategory(c.id as any)}
+            style={{
+              flex: 1, textAlign: 'center', padding: '20px 10px',
+              border: `2px solid ${category === c.id ? c.color : 'var(--color-glass-border)'}`,
+              borderRadius: '15px',
+              background: category === c.id ? `${c.color}20` : 'transparent',
+              cursor: 'pointer',
+              transition: 'all 0.3s ease',
+              transform: category === c.id ? 'scale(1.03)' : 'scale(1)',
+            }}>
+            <div style={{ fontSize: '40px', marginBottom: '8px' }}>{c.emoji}</div>
+            <div style={{ fontWeight: 'bold' }}>{c.label}</div>
           </div>
-        </div>
+        ))}
+      </div>
+    </div>
+  );
 
-        {/* فئة الإعلان */}
-        <div>
-          <label style={labelStyle}>الفئة</label>
-          <div style={{ display: 'flex', gap: '10px' }}>
-            {[
-              { id: 'car', label: 'سيارة 🚗' },
-              { id: 'motorcycle', label: 'دراجة 🏍️' },
-              { id: 'real_estate', label: 'عقار 🏠' },
-            ].map(c => (
-              <div key={c.id} onClick={() => setCategory(c.id as any)}
-                style={{ flex: 1, textAlign: 'center', padding: '10px', border: `1px solid ${category === c.id ? 'var(--color-accent)' : 'var(--color-glass-border)'}`, borderRadius: '10px', background: category === c.id ? 'rgba(233, 69, 96, 0.1)' : 'transparent', cursor: 'pointer', fontWeight: category === c.id ? 'bold' : 'normal' }}>
-                {c.label}
-              </div>
-            ))}
-          </div>
-        </div>
+  const renderStep2 = () => (
+    <div style={{ animation: 'fadeInUp 0.4s ease' }}>
+      <h3 style={{ fontSize: '1.4rem', fontWeight: 800, marginBottom: '8px' }}>
+        {category === 'car' ? '🚗 تفاصيل السيارة' : category === 'motorcycle' ? '🏍️ تفاصيل الدراجة' : '🏠 تفاصيل العقار'}
+      </h3>
+      <p className="text-secondary" style={{ marginBottom: '20px' }}>أضف المعلومات الأساسية</p>
 
-        {/* العنوان */}
-        <div>
-          <label style={labelStyle}>العنوان *</label>
-          <input required type="text" value={title} onChange={e => setTitle(e.target.value)} style={inputStyle} placeholder="مثال: سيارة رينو كليو 4 موديل 2020" />
-        </div>
-
-        {/* الوصف */}
-        <div>
-          <label style={labelStyle}>الوصف *</label>
-          <textarea required value={description} onChange={e => setDescription(e.target.value)} style={{...inputStyle, minHeight: '100px', resize: 'vertical'}} placeholder="تفاصيل الإعلان: الحالة، المواصفات، سبب البيع..."></textarea>
-        </div>
-
-        {/* السعر + الولاية */}
-        <div style={{ display: 'flex', gap: '10px' }}>
-          <div style={{ flex: 1 }}>
-            <label style={labelStyle}>السعر (دج)</label>
-            <input type="number" value={price} onChange={e => setPrice(e.target.value)} style={inputStyle} placeholder="اختياري" />
-          </div>
-          <div style={{ flex: 1 }}>
-            <label style={labelStyle}>الولاية *</label>
-            <select required value={wilaya} onChange={e => setWilaya(e.target.value)} style={inputStyle}>
-              {WILAYAS.map(w => <option key={w} value={w} style={{color: '#000'}}>{w}</option>)}
+      {category === 'car' && (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
+          {/* Brand */}
+          <div>
+            <label style={labelStyle}>الماركة *</label>
+            <select value={carBrand} onChange={e => { setCarBrand(e.target.value); setCarModel(''); }} style={inputStyle}>
+              <option value="" style={{color: '#000'}}>اختر الماركة...</option>
+              {Object.keys(ALL_CAR_BRANDS).sort().map(brand => (
+                <option key={brand} value={brand} style={{color: '#000'}}>{brand}</option>
+              ))}
+              <option value="Other" style={{color: '#000'}}>ماركة أخرى</option>
             </select>
           </div>
-        </div>
 
-        {/* البلدية + قابل للتفاوض */}
-        <div style={{ display: 'flex', gap: '10px', alignItems: 'flex-end' }}>
-          <div style={{ flex: 1 }}>
-            <label style={labelStyle}>البلدية</label>
-            <input type="text" value={commune} onChange={e => setCommune(e.target.value)} style={inputStyle} placeholder="اختياري" />
-          </div>
-          <label style={{ flex: 1, display: 'flex', alignItems: 'center', gap: '8px', padding: '12px', background: 'rgba(255,255,255,0.03)', borderRadius: '10px', border: '1px solid var(--color-glass-border)', cursor: 'pointer' }}>
-            <input type="checkbox" checked={isNegotiable} onChange={e => setIsNegotiable(e.target.checked)} />
-            <span style={{ fontSize: '0.9rem' }}>قابل للتفاوض</span>
-          </label>
-        </div>
-
-        {/* ═══ حقول السيارة ═══ */}
-        {category === 'car' && (
-          <div style={{ border: '1px solid var(--color-glass-border)', borderRadius: '15px', padding: '15px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
-            <h4 style={{ color: 'var(--color-electric)', marginBottom: '5px' }}>🚗 مواصفات السيارة</h4>
-            <div style={{ display: 'flex', gap: '10px' }}>
-              <div style={{ flex: 1 }}>
-                <label style={labelStyle}>الماركة *</label>
-                <input required type="text" value={carBrand} onChange={e => setCarBrand(e.target.value)} style={inputStyle} placeholder="Renault, Toyota..." />
-              </div>
-              <div style={{ flex: 1 }}>
-                <label style={labelStyle}>الموديل *</label>
-                <input required type="text" value={carModel} onChange={e => setCarModel(e.target.value)} style={inputStyle} placeholder="Clio 4, Corolla..." />
-              </div>
-            </div>
-            <div style={{ display: 'flex', gap: '10px' }}>
-              <div style={{ flex: 1 }}>
-                <label style={labelStyle}>السنة</label>
-                <input type="number" value={carYear} onChange={e => setCarYear(e.target.value)} style={inputStyle} placeholder="2020" min="1950" max="2026" />
-              </div>
-              <div style={{ flex: 1 }}>
-                <label style={labelStyle}>العداد (كم)</label>
-                <input type="number" value={mileage} onChange={e => setMileage(e.target.value)} style={inputStyle} placeholder="50000" />
-              </div>
-            </div>
-            <div style={{ display: 'flex', gap: '10px' }}>
-              <div style={{ flex: 1 }}>
-                <label style={labelStyle}>الوقود</label>
-                <select value={fuelType} onChange={e => setFuelType(e.target.value)} style={inputStyle}>
-                  {FUEL_TYPES.map(f => <option key={f.value} value={f.value} style={{color:'#000'}}>{f.label}</option>)}
-                </select>
-              </div>
-              <div style={{ flex: 1 }}>
-                <label style={labelStyle}>الناقل</label>
-                <select value={transmission} onChange={e => setTransmission(e.target.value)} style={inputStyle}>
-                  {TRANSMISSION_TYPES.map(t => <option key={t.value} value={t.value} style={{color:'#000'}}>{t.label}</option>)}
-                </select>
-              </div>
-            </div>
-            <div>
-              <label style={labelStyle}>الحالة</label>
-              <select value={condition} onChange={e => setCondition(e.target.value)} style={inputStyle}>
-                {CONDITION_TYPES.map(c => <option key={c.value} value={c.value} style={{color:'#000'}}>{c.label}</option>)}
+          {/* Model */}
+          <div>
+            <label style={labelStyle}>الموديل *</label>
+            {carBrand && carBrand !== 'Other' ? (
+              <select value={carModel} onChange={e => setCarModel(e.target.value)} style={inputStyle}>
+                <option value="" style={{color: '#000'}}>اختر الموديل...</option>
+                {ALL_CAR_BRANDS[carBrand]?.map(model => (
+                  <option key={model} value={model} style={{color: '#000'}}>{model}</option>
+                ))}
+                <option value="Other" style={{color: '#000'}}>موديل آخر</option>
               </select>
+            ) : (
+              <input type="text" value={carModel} onChange={e => setCarModel(e.target.value)} style={inputStyle} placeholder="اكتب الموديل..." />
+            )}
+          </div>
+
+          {/* Year + Mileage */}
+          <div style={{ display: 'flex', gap: '10px' }}>
+            <div style={{ flex: 1 }}>
+              <label style={labelStyle}>السنة</label>
+              <input type="number" value={carYear} onChange={e => setCarYear(e.target.value)} style={inputStyle} placeholder="2024" min="1950" max="2026" />
+            </div>
+            <div style={{ flex: 1 }}>
+              <label style={labelStyle}>العداد (كم)</label>
+              <input type="number" value={mileage} onChange={e => setMileage(e.target.value)} style={inputStyle} placeholder="50000" />
             </div>
           </div>
-        )}
 
-        {/* ═══ حقول الدراجة ═══ */}
-        {category === 'motorcycle' && (
-          <div style={{ border: '1px solid var(--color-glass-border)', borderRadius: '15px', padding: '15px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
-            <h4 style={{ color: 'var(--color-violet)', marginBottom: '5px' }}>🏍️ مواصفات الدراجة</h4>
-            <div style={{ display: 'flex', gap: '10px' }}>
-              <div style={{ flex: 1 }}>
-                <label style={labelStyle}>الماركة *</label>
-                <input required type="text" value={motoBrand} onChange={e => setMotoBrand(e.target.value)} style={inputStyle} placeholder="Yamaha, Honda..." />
-              </div>
-              <div style={{ flex: 1 }}>
-                <label style={labelStyle}>الموديل *</label>
-                <input required type="text" value={motoModel} onChange={e => setMotoModel(e.target.value)} style={inputStyle} placeholder="MT-07, CBR..." />
-              </div>
-            </div>
-            <div style={{ display: 'flex', gap: '10px' }}>
-              <div style={{ flex: 1 }}>
-                <label style={labelStyle}>قوة المحرك (CC)</label>
-                <input type="number" value={engineCC} onChange={e => setEngineCC(e.target.value)} style={inputStyle} placeholder="125, 250, 600" />
-              </div>
-              <div style={{ flex: 1 }}>
-                <label style={labelStyle}>الحالة</label>
-                <select value={condition} onChange={e => setCondition(e.target.value)} style={inputStyle}>
-                  {CONDITION_TYPES.map(c => <option key={c.value} value={c.value} style={{color:'#000'}}>{c.label}</option>)}
-                </select>
-              </div>
+          {/* Fuel */}
+          <div>
+            <label style={labelStyle}>نوع الوقود</label>
+            <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+              {FUEL_TYPES.map(f => (
+                <div key={f.value} onClick={() => setFuelType(f.value)} style={{
+                  ...chipStyle,
+                  border: `1px solid ${fuelType === f.value ? '#4facfe' : 'var(--color-glass-border)'}`,
+                  background: fuelType === f.value ? 'rgba(79,172,254,0.15)' : 'transparent',
+                }}>
+                  {f.emoji} {f.label}
+                </div>
+              ))}
             </div>
           </div>
-        )}
 
-        {/* ═══ حقول العقار ═══ */}
-        {category === 'real_estate' && (
-          <div style={{ border: '1px solid var(--color-glass-border)', borderRadius: '15px', padding: '15px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
-            <h4 style={{ color: '#00d9a3', marginBottom: '5px' }}>🏠 مواصفات العقار</h4>
-            <div>
-              <label style={labelStyle}>نوع العقار *</label>
-              <select required value={propertyType} onChange={e => setPropertyType(e.target.value)} style={inputStyle}>
-                {PROPERTY_TYPES.map(p => <option key={p.value} value={p.value} style={{color:'#000'}}>{p.label}</option>)}
-              </select>
-            </div>
+          {/* Transmission */}
+          <div>
+            <label style={labelStyle}>ناقل الحركة</label>
             <div style={{ display: 'flex', gap: '10px' }}>
-              <div style={{ flex: 1 }}>
-                <label style={labelStyle}>المساحة (م²)</label>
-                <input type="number" value={area} onChange={e => setArea(e.target.value)} style={inputStyle} placeholder="80" />
-              </div>
-              <div style={{ flex: 1 }}>
-                <label style={labelStyle}>الغرف</label>
-                <input type="number" value={rooms} onChange={e => setRooms(e.target.value)} style={inputStyle} placeholder="3" />
-              </div>
-              <div style={{ flex: 1 }}>
-                <label style={labelStyle}>الطابق</label>
-                <input type="number" value={floor} onChange={e => setFloor(e.target.value)} style={inputStyle} placeholder="2" />
-              </div>
-            </div>
-            <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
-              <label style={checkboxStyle}><input type="checkbox" checked={hasElevator} onChange={e => setHasElevator(e.target.checked)} /> مصعد</label>
-              <label style={checkboxStyle}><input type="checkbox" checked={hasParking} onChange={e => setHasParking(e.target.checked)} /> مرآب</label>
-              <label style={checkboxStyle}><input type="checkbox" checked={hasGarden} onChange={e => setHasGarden(e.target.checked)} /> حديقة</label>
+              {TRANSMISSION_TYPES.map(t => (
+                <div key={t.value} onClick={() => setTransmission(t.value)} style={{
+                  flex: 1, textAlign: 'center', ...chipStyle,
+                  border: `2px solid ${transmission === t.value ? '#4facfe' : 'var(--color-glass-border)'}`,
+                  background: transmission === t.value ? 'rgba(79,172,254,0.15)' : 'transparent',
+                }}>
+                  {t.emoji} {t.label}
+                </div>
+              ))}
             </div>
           </div>
-        )}
 
-        {/* ═══ رفع الصور ═══ */}
+          {/* Condition */}
+          <div>
+            <label style={labelStyle}>الحالة</label>
+            <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+              {CONDITION_TYPES.map(c => (
+                <div key={c.value} onClick={() => setCondition(c.value)} style={{
+                  ...chipStyle,
+                  border: `1px solid ${condition === c.value ? c.color : 'var(--color-glass-border)'}`,
+                  background: condition === c.value ? `${c.color}20` : 'transparent',
+                }}>
+                  {c.emoji} {c.label}
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {category === 'motorcycle' && (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
+          <div>
+            <label style={labelStyle}>الماركة *</label>
+            <input type="text" value={motoBrand} onChange={e => setMotoBrand(e.target.value)} style={inputStyle} placeholder="Yamaha, Honda..." />
+          </div>
+          <div>
+            <label style={labelStyle}>الموديل</label>
+            <input type="text" value={motoModel} onChange={e => setMotoModel(e.target.value)} style={inputStyle} placeholder="MT-07, CBR..." />
+          </div>
+          <div>
+            <label style={labelStyle}>قوة المحرك (CC)</label>
+            <input type="number" value={engineCC} onChange={e => setEngineCC(e.target.value)} style={inputStyle} placeholder="125, 250, 600" />
+          </div>
+          <div>
+            <label style={labelStyle}>الحالة</label>
+            <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+              {CONDITION_TYPES.map(c => (
+                <div key={c.value} onClick={() => setCondition(c.value)} style={{
+                  ...chipStyle,
+                  border: `1px solid ${condition === c.value ? c.color : 'var(--color-glass-border)'}`,
+                  background: condition === c.value ? `${c.color}20` : 'transparent',
+                }}>
+                  {c.emoji} {c.label}
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {category === 'real_estate' && (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
+          <div>
+            <label style={labelStyle}>نوع العقار *</label>
+            <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+              {PROPERTY_TYPES.map(p => (
+                <div key={p.value} onClick={() => setPropertyType(p.value)} style={{
+                  ...chipStyle,
+                  border: `1px solid ${propertyType === p.value ? '#38ef7d' : 'var(--color-glass-border)'}`,
+                  background: propertyType === p.value ? 'rgba(56,239,125,0.15)' : 'transparent',
+                }}>
+                  {p.emoji} {p.label}
+                </div>
+              ))}
+            </div>
+          </div>
+          <div style={{ display: 'flex', gap: '10px' }}>
+            <div style={{ flex: 1 }}>
+              <label style={labelStyle}>المساحة (م²)</label>
+              <input type="number" value={area} onChange={e => setArea(e.target.value)} style={inputStyle} placeholder="80" />
+            </div>
+            <div style={{ flex: 1 }}>
+              <label style={labelStyle}>الغرف</label>
+              <input type="number" value={rooms} onChange={e => setRooms(e.target.value)} style={inputStyle} placeholder="3" />
+            </div>
+            <div style={{ flex: 1 }}>
+              <label style={labelStyle}>الطابق</label>
+              <input type="number" value={floor} onChange={e => setFloor(e.target.value)} style={inputStyle} placeholder="2" />
+            </div>
+          </div>
+          <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
+            <label style={checkboxChipStyle(hasElevator)}><input type="checkbox" checked={hasElevator} onChange={e => setHasElevator(e.target.checked)} style={{display:'none'}} /> 🛗 مصعد</label>
+            <label style={checkboxChipStyle(hasParking)}><input type="checkbox" checked={hasParking} onChange={e => setHasParking(e.target.checked)} style={{display:'none'}} /> 🅿️ مرآب</label>
+            <label style={checkboxChipStyle(hasGarden)}><input type="checkbox" checked={hasGarden} onChange={e => setHasGarden(e.target.checked)} style={{display:'none'}} /> 🌿 حديقة</label>
+          </div>
+        </div>
+      )}
+
+      {/* Custom title (optional) */}
+      <div style={{ marginTop: '20px', padding: '15px', border: '1px dashed var(--color-glass-border)', borderRadius: '12px' }}>
+        <label style={labelStyle}>العنوان (اختياري - يتم توليده تلقائياً)</label>
+        <input type="text" value={title} onChange={e => setTitle(e.target.value)} style={inputStyle} placeholder={autoTitle() || 'عنوان مخصص...'} />
+        <label style={{ ...labelStyle, marginTop: '10px' }}>الوصف (اختياري)</label>
+        <textarea value={description} onChange={e => setDescription(e.target.value)} style={{...inputStyle, minHeight: '80px', resize: 'vertical'}} placeholder="تفاصيل إضافية..."></textarea>
+      </div>
+    </div>
+  );
+
+  const renderStep3 = () => (
+    <div style={{ animation: 'fadeInUp 0.4s ease' }}>
+      <h3 style={{ fontSize: '1.4rem', fontWeight: 800, marginBottom: '8px' }}>💰 السعر والموقع</h3>
+      <p className="text-secondary" style={{ marginBottom: '20px' }}>حدد السعر والولاية</p>
+      
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+        {/* Price */}
         <div>
-          <label style={labelStyle}>الصور / الفيديو * (أضف صورة واحدة على الأقل)</label>
-          <div style={{ display: 'flex', gap: '10px', overflowX: 'auto', paddingBottom: '10px', flexWrap: 'wrap' }}>
-            {previewUrls.map((url, idx) => (
-              <div key={idx} style={{ position: 'relative' }}>
-                <img src={url} alt={`صورة ${idx + 1}`} style={{ width: '80px', height: '80px', borderRadius: '10px', objectFit: 'cover' }} />
-                <button 
-                  type="button"
-                  onClick={() => removeFile(idx)} 
-                  style={{ position: 'absolute', top: '-5px', right: '-5px', background: 'var(--color-accent)', border: 'none', borderRadius: '50%', width: '22px', height: '22px', display: 'flex', justifyContent: 'center', alignItems: 'center', cursor: 'pointer' }}>
-                  <X size={14} color="#fff" />
-                </button>
-              </div>
-            ))}
-            
-            <label style={{ 
-              width: '80px', height: '80px', borderRadius: '10px', 
-              border: '2px dashed var(--color-glass-border)', 
-              display: 'flex', justifyContent: 'center', alignItems: 'center', 
-              cursor: 'pointer', background: 'rgba(255,255,255,0.02)',
-              flexShrink: 0,
-            }}>
-              <input type="file" multiple accept="image/*,video/*" onChange={handleFileChange} style={{ display: 'none' }} />
-              <Camera size={24} color="var(--color-text-secondary)" />
-            </label>
+          <label style={labelStyle}>السعر (دج)</label>
+          <div style={{ position: 'relative' }}>
+            <input type="number" value={price} onChange={e => setPrice(e.target.value)} style={{...inputStyle, paddingRight: '50px', fontSize: '1.3rem', fontWeight: 'bold', textAlign: 'center'}} placeholder="0" />
+            <span style={{ position: 'absolute', right: '15px', top: '50%', transform: 'translateY(-50%)', color: 'var(--color-text-secondary)', fontSize: '0.9rem' }}>دج</span>
           </div>
         </div>
 
-        <button type="submit" className="primary-btn mt-4" disabled={loading}>
-          {loading ? 'جاري النشر...' : 'نشر الإعلان'} <Upload size={18} />
-        </button>
-      </form>
+        {/* Negotiable */}
+        <div onClick={() => setIsNegotiable(!isNegotiable)} style={{
+          padding: '15px', borderRadius: '12px', cursor: 'pointer',
+          border: `2px solid ${isNegotiable ? '#38ef7d' : 'var(--color-glass-border)'}`,
+          background: isNegotiable ? 'rgba(56,239,125,0.1)' : 'transparent',
+          display: 'flex', alignItems: 'center', gap: '10px',
+          transition: 'all 0.3s ease',
+        }}>
+          <div style={{
+            width: '24px', height: '24px', borderRadius: '6px',
+            border: `2px solid ${isNegotiable ? '#38ef7d' : 'var(--color-glass-border)'}`,
+            display: 'flex', justifyContent: 'center', alignItems: 'center',
+            background: isNegotiable ? '#38ef7d' : 'transparent',
+          }}>
+            {isNegotiable && <Check size={16} color="#000" />}
+          </div>
+          <span style={{ fontWeight: isNegotiable ? 'bold' : 'normal' }}>قابل للتفاوض</span>
+        </div>
+
+        {/* Wilaya */}
+        <div>
+          <label style={labelStyle}>الولاية *</label>
+          <select value={wilaya} onChange={e => setWilaya(e.target.value)} style={inputStyle}>
+            {WILAYAS.map(w => <option key={w} value={w} style={{color: '#000'}}>{w}</option>)}
+          </select>
+        </div>
+
+        {/* Commune */}
+        <div>
+          <label style={labelStyle}>البلدية (اختياري)</label>
+          <input type="text" value={commune} onChange={e => setCommune(e.target.value)} style={inputStyle} placeholder="اسم البلدية..." />
+        </div>
+      </div>
+    </div>
+  );
+
+  const renderStep4 = () => (
+    <div style={{ animation: 'fadeInUp 0.4s ease' }}>
+      <h3 style={{ fontSize: '1.4rem', fontWeight: 800, marginBottom: '8px' }}>📸 أضف الصور</h3>
+      <p className="text-secondary" style={{ marginBottom: '20px' }}>الصورة الأولى ستكون الغلاف</p>
+
+      <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', marginBottom: '20px' }}>
+        {previewUrls.map((url, idx) => (
+          <div key={idx} style={{ position: 'relative', width: '100px', height: '100px' }}>
+            <img src={url} alt={`صورة ${idx + 1}`} style={{ width: '100%', height: '100%', borderRadius: '12px', objectFit: 'cover' }} />
+            {idx === 0 && <span style={{ position: 'absolute', bottom: '5px', left: '5px', background: '#4facfe', color: '#fff', fontSize: '0.65rem', padding: '2px 6px', borderRadius: '4px' }}>غلاف</span>}
+            <button 
+              type="button"
+              onClick={() => removeFile(idx)} 
+              style={{ position: 'absolute', top: '-8px', right: '-8px', background: '#e94560', border: 'none', borderRadius: '50%', width: '24px', height: '24px', display: 'flex', justifyContent: 'center', alignItems: 'center', cursor: 'pointer' }}>
+              <X size={14} color="#fff" />
+            </button>
+          </div>
+        ))}
+        
+        <label style={{ 
+          width: '100px', height: '100px', borderRadius: '12px', 
+          border: '2px dashed var(--color-glass-border)', 
+          display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', 
+          cursor: 'pointer', background: 'rgba(255,255,255,0.02)',
+          gap: '5px', transition: 'all 0.3s ease',
+        }}>
+          <input type="file" multiple accept="image/*,video/*" onChange={handleFileChange} style={{ display: 'none' }} />
+          <Camera size={24} color="var(--color-text-secondary)" />
+          <span style={{ fontSize: '0.7rem', color: 'var(--color-text-secondary)' }}>إضافة</span>
+        </label>
+      </div>
+
+      {/* Summary Card */}
+      <div style={{ background: 'rgba(79,172,254,0.05)', border: '1px solid rgba(79,172,254,0.2)', borderRadius: '15px', padding: '15px', marginBottom: '15px' }}>
+        <h4 style={{ color: '#4facfe', fontSize: '1rem', marginBottom: '10px' }}>📋 ملخص الإعلان</h4>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px', fontSize: '0.85rem' }}>
+          <span className="text-secondary">العنوان:</span>
+          <span style={{ fontWeight: 'bold' }}>{title || autoTitle() || '—'}</span>
+          <span className="text-secondary">الفئة:</span>
+          <span>{CATEGORIES.find(c => c.id === category)?.emoji} {CATEGORIES.find(c => c.id === category)?.label}</span>
+          <span className="text-secondary">الولاية:</span>
+          <span>{wilaya}</span>
+          <span className="text-secondary">السعر:</span>
+          <span style={{ color: 'var(--color-accent)', fontWeight: 'bold' }}>{price ? `${Number(price).toLocaleString()} دج` : 'غير محدد'}</span>
+        </div>
+      </div>
+    </div>
+  );
+
+  // ═══════════ SUCCESS VIEW ═══════════
+  if (successMsg) {
+    return (
+      <div style={{ padding: '20px', textAlign: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: '80vh' }}>
+        <div style={{ fontSize: '80px', marginBottom: '20px', animation: 'bounceIn 0.6s ease' }}>🎉</div>
+        <h2 style={{ fontSize: '1.5rem', fontWeight: 800, marginBottom: '10px' }}>تم النشر بنجاح!</h2>
+        <p className="text-secondary">سيتم توجيهك للصفحة الرئيسية...</p>
+      </div>
+    );
+  }
+
+  return (
+    <div style={{ padding: '20px 20px 120px 20px', overflowY: 'auto' }}>
+      {/* Header */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '5px' }}>
+        <h2 style={{ fontSize: '1.3rem', fontWeight: 800 }}>إعلان جديد</h2>
+        <span style={{ color: 'var(--color-text-secondary)', fontSize: '0.85rem' }}>الخطوة {step} من {TOTAL_STEPS}</span>
+      </div>
+
+      {renderProgressBar()}
+
+      {errorMsg && <div style={{ background: 'rgba(233, 69, 96, 0.1)', border: '1px solid rgba(233, 69, 96, 0.3)', padding: '12px', borderRadius: '10px', marginBottom: '15px', color: 'var(--color-accent)', textAlign: 'center', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}><AlertCircle size={18} />{errorMsg}</div>}
+
+      <div className="glass-card" style={{ padding: '20px' }}>
+        {step === 1 && renderStep1()}
+        {step === 2 && renderStep2()}
+        {step === 3 && renderStep3()}
+        {step === 4 && renderStep4()}
+      </div>
+
+      {/* Navigation Buttons */}
+      <div style={{ display: 'flex', gap: '12px', marginTop: '20px' }}>
+        {step > 1 && (
+          <button onClick={() => setStep(step - 1)} style={{
+            flex: 1, padding: '15px', borderRadius: '15px',
+            background: 'var(--color-glass-bg)', border: '1px solid var(--color-glass-border)',
+            color: '#fff', fontWeight: 'bold', fontSize: '1rem',
+            display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '8px',
+            cursor: 'pointer',
+          }}>
+            <ArrowRight size={18} /> السابق
+          </button>
+        )}
+        
+        {step < TOTAL_STEPS ? (
+          <button onClick={() => canProceed() && setStep(step + 1)} style={{
+            flex: 2, padding: '15px', borderRadius: '15px',
+            background: canProceed() ? 'linear-gradient(90deg, #4facfe, #00f2fe)' : 'rgba(255,255,255,0.1)',
+            border: 'none', color: '#fff', fontWeight: 'bold', fontSize: '1rem',
+            display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '8px',
+            cursor: canProceed() ? 'pointer' : 'not-allowed',
+            opacity: canProceed() ? 1 : 0.5,
+            boxShadow: canProceed() ? '0 4px 15px rgba(79, 172, 254, 0.4)' : 'none',
+          }}>
+            التالي <ArrowLeft size={18} />
+          </button>
+        ) : (
+          <button onClick={handleSubmit} disabled={loading || files.length === 0} style={{
+            flex: 2, padding: '15px', borderRadius: '15px',
+            background: files.length > 0 ? 'linear-gradient(90deg, #38ef7d, #11998e)' : 'rgba(255,255,255,0.1)',
+            border: 'none', color: '#fff', fontWeight: 'bold', fontSize: '1rem',
+            display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '8px',
+            cursor: files.length > 0 ? 'pointer' : 'not-allowed',
+            opacity: files.length > 0 ? 1 : 0.5,
+            boxShadow: files.length > 0 ? '0 4px 15px rgba(56, 239, 125, 0.4)' : 'none',
+          }}>
+            {loading ? 'جاري النشر...' : 'نشر الإعلان 🚀'} <Upload size={18} />
+          </button>
+        )}
+      </div>
     </div>
   );
 };
 
-const labelStyle: React.CSSProperties = { display: 'block', marginBottom: '5px', fontSize: '0.9rem', color: 'var(--color-text-secondary)' };
+const labelStyle: React.CSSProperties = { display: 'block', marginBottom: '8px', fontSize: '0.9rem', color: 'var(--color-text-secondary)' };
 const inputStyle: React.CSSProperties = {
-  width: '100%', padding: '12px 15px', borderRadius: '10px',
+  width: '100%', padding: '12px 15px', borderRadius: '12px',
   backgroundColor: 'rgba(255, 255, 255, 0.05)',
   border: '1px solid var(--color-glass-border)',
   color: '#fff', fontFamily: 'inherit', outline: 'none', fontSize: '1rem',
 };
-const checkboxStyle: React.CSSProperties = {
-  display: 'flex', alignItems: 'center', gap: '6px', padding: '8px 12px',
-  background: 'rgba(255,255,255,0.03)', borderRadius: '8px', border: '1px solid var(--color-glass-border)', cursor: 'pointer',
+const chipStyle: React.CSSProperties = {
+  padding: '10px 14px', borderRadius: '10px', cursor: 'pointer', fontSize: '0.85rem',
+  display: 'flex', alignItems: 'center', gap: '6px', transition: 'all 0.3s ease',
 };
+const checkboxChipStyle = (active: boolean): React.CSSProperties => ({
+  padding: '10px 14px', borderRadius: '10px', cursor: 'pointer',
+  border: `1px solid ${active ? '#38ef7d' : 'var(--color-glass-border)'}`,
+  background: active ? 'rgba(56,239,125,0.15)' : 'transparent',
+  display: 'flex', alignItems: 'center', gap: '6px',
+  transition: 'all 0.3s ease', fontSize: '0.9rem',
+});
 
 export default AddListingScreen;

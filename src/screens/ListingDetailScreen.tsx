@@ -1,16 +1,19 @@
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
 import { useAuthStore } from '../store/authStore';
-import { ArrowRight, Phone, MessageCircle, MapPin, Calendar, Clock, Eye, ShieldCheck, Heart } from 'lucide-react';
+import { ArrowRight, Phone, MessageCircle, MapPin, Clock, Eye, ShieldCheck, Heart } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import { ar } from 'date-fns/locale';
+import { useFavoriteStore } from '../store/favoriteStore';
 import type { ListingWithDetails } from '../types/database.types';
 
 const ListingDetailScreen = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { user } = useAuthStore();
+  
+  const { addFavorite, removeFavorite, isFavorite } = useFavoriteStore();
   
   const [listing, setListing] = useState<ListingWithDetails | null>(null);
   const [loading, setLoading] = useState(true);
@@ -20,8 +23,8 @@ const ListingDetailScreen = () => {
     const fetchDetail = async () => {
       if (!id) return;
       
-      const { data, error } = await supabase
-        .from('listings')
+      const { data, error } = await (supabase
+        .from('listings') as any)
         .select(`*, profiles:user_id (full_name, phone_number, wilaya, avatar_url), listing_media (id, media_type, public_url, is_cover)`)
         .eq('id', id)
         .single();
@@ -30,7 +33,7 @@ const ListingDetailScreen = () => {
         setListing(data as unknown as ListingWithDetails);
         
         // Increase views
-        await supabase.rpc('increment_view_count', { listing_id: id }).catch(() => {});
+        await (supabase as any).rpc('increment_view_count', { listing_id: id });
       }
       setLoading(false);
     };
@@ -47,7 +50,7 @@ const ListingDetailScreen = () => {
 
   const handleWhatsApp = () => {
     const phone = listing.profiles.phone_number.replace(/^0/, '+213');
-    window.location.href = `https://wa.me/${phone}?text=مرحباً، أنا مهتم بإعلانك (${listing.title}) على Ghaza Auto.`;
+    window.location.href = `https://wa.me/${phone}?text=مرحباً، أنا مهتم بإعلانك (${listing.title}) على كوورتي Courtier.`;
   };
 
   const isOwner = user?.id === listing.user_id;
@@ -61,6 +64,33 @@ const ListingDetailScreen = () => {
         style={{ position: 'absolute', top: '20px', left: '20px', zIndex: 50, background: 'rgba(0,0,0,0.5)', border: '1px solid var(--color-glass-border)', padding: '10px', borderRadius: '50%', color: 'white', cursor: 'pointer', backdropFilter: 'blur(5px)' }}
       >
         <ArrowRight size={24} />
+      </button>
+
+      {/* Favorite Button */}
+      <button 
+        onClick={() => {
+          if (!listing) return;
+          if (isFavorite(listing.id)) {
+            removeFavorite(listing.id);
+          } else {
+            addFavorite(listing);
+          }
+        }} 
+        style={{ 
+          position: 'absolute', 
+          top: '20px', 
+          right: '20px', 
+          zIndex: 50, 
+          background: 'rgba(0,0,0,0.5)', 
+          border: '1px solid var(--color-glass-border)', 
+          padding: '10px', 
+          borderRadius: '50%', 
+          color: listing && isFavorite(listing.id) ? 'var(--color-accent)' : 'white', 
+          cursor: 'pointer', 
+          backdropFilter: 'blur(5px)' 
+        }}
+      >
+        <Heart size={24} fill={listing && isFavorite(listing.id) ? 'currentColor' : 'none'} />
       </button>
 
       {/* Media Carousel */}
