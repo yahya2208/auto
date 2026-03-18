@@ -18,6 +18,7 @@ CREATE TABLE IF NOT EXISTS public.profiles (
     qr_code_token TEXT UNIQUE NOT NULL,
     total_qr_scans INTEGER DEFAULT 0,
     followers_count INTEGER DEFAULT 0,
+    is_admin BOOLEAN DEFAULT false,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
 );
 
@@ -84,6 +85,7 @@ CREATE TABLE IF NOT EXISTS public.listings (
     is_negotiable BOOLEAN DEFAULT false,
     is_active BOOLEAN DEFAULT true,
     view_count INTEGER DEFAULT 0,
+    share_count INTEGER DEFAULT 0,
     
     -- بيانات السيارة
     car_brand TEXT,
@@ -133,6 +135,7 @@ DO $$ BEGIN
   ALTER TABLE public.listings ADD COLUMN IF NOT EXISTS has_garden BOOLEAN DEFAULT false;
   ALTER TABLE public.listings ADD COLUMN IF NOT EXISTS commune TEXT;
   ALTER TABLE public.listings ADD COLUMN IF NOT EXISTS is_negotiable BOOLEAN DEFAULT false;
+  ALTER TABLE public.listings ADD COLUMN IF NOT EXISTS share_count INTEGER DEFAULT 0;
 EXCEPTION WHEN OTHERS THEN NULL;
 END $$;
 
@@ -189,6 +192,27 @@ ON public.listing_media FOR DELETE USING (
 
 
 -------------------------------------------------------
+-- جدول التعليقات (comments)
+-------------------------------------------------------
+CREATE TABLE IF NOT EXISTS public.comments (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    listing_id UUID NOT NULL REFERENCES public.listings(id) ON DELETE CASCADE,
+    user_id UUID NOT NULL REFERENCES public.profiles(id) ON DELETE CASCADE,
+    content TEXT NOT NULL,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
+);
+
+ALTER TABLE public.comments ENABLE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS "Comments are viewable by everyone." ON public.comments;
+CREATE POLICY "Comments are viewable by everyone." 
+ON public.comments FOR SELECT USING (true);
+
+DROP POLICY IF EXISTS "Users can add comments." ON public.comments;
+CREATE POLICY "Users can add comments." 
+ON public.comments FOR INSERT WITH CHECK (auth.uid() = user_id);
+
+-------------------------------------------------------
 -- 5. جدول عمليات مسح الكود (qr_scans)
 -------------------------------------------------------
 CREATE TABLE IF NOT EXISTS public.qr_scans (
@@ -234,9 +258,11 @@ DROP POLICY IF EXISTS "Users can unfollow." ON public.follows;
 CREATE POLICY "Users can unfollow." 
 ON public.follows FOR DELETE USING (auth.uid() = follower_id);
 
--- إضافة عمود followers_count إلى profiles إن لم يكن موجوداً
+-- إضافة أعمدة إضافية إلى profiles إن لم تكن موجودة
 DO $$ BEGIN
+  ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS avatar_url TEXT;
   ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS followers_count INTEGER DEFAULT 0;
+  ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS is_admin BOOLEAN DEFAULT false;
 EXCEPTION WHEN OTHERS THEN NULL;
 END $$;
 
@@ -328,6 +354,25 @@ BEGIN
     WHERE id = target_user_id;
   END IF;
 END;
+$$;
+
+-- تحديث المشاركات
+CREATE OR REPLACE FUNCTION increment_shares(listing_id_param UUID)
+RETURNS void
+LANGUAGE sql
+SECURITY DEFINER
+AS $$
+  UPDATE public.listings SET share_count = share_count + 1 WHERE id = listing_id_param;
+$$;
+
+-- جلب معرّف الأدمن (للمتابعة التلقائية)
+CREATE OR REPLACE FUNCTION get_admin_id()
+RETURNS UUID
+LANGUAGE sql
+SECURITY DEFINER
+AS $$
+  -- نأخذ أول حساب أدمن، أو أي أدمن موجود
+  SELECT id FROM public.profiles WHERE is_admin = true LIMIT 1;
 $$;
 
 -- تحديث الذاكرة المخفية

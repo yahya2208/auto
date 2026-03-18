@@ -11,9 +11,11 @@ import HomeScreen from './screens/HomeScreen';
 import AddListingScreen from './screens/AddListingScreen';
 import ProfileScreen from './screens/ProfileScreen';
 import EditProfileScreen from './screens/EditProfileScreen';
+import EditListingScreen from './screens/EditListingScreen';
 import FavoritesScreen from './screens/FavoritesScreen';
 import SellerProfileScreen from './screens/SellerProfileScreen';
 import ListingDetailScreen from './screens/ListingDetailScreen';
+import AdminDashboard from './screens/admin/AdminDashboard';
 
 // Main Layout with Bottom Nav
 const MainLayout = ({ children }: { children: React.ReactNode }) => {
@@ -73,19 +75,12 @@ function App() {
   const { setSession, fetchProfile } = useAuthStore();
 
   useEffect(() => {
-    // Initial Auth State Check
-    supabase.auth.getSession().then(({ data: { session } }) => {
+    // Single source of truth for auth initialization
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      console.log('[AUTH] State changed:', _event);
       setSession(session);
       if (session?.user) {
         fetchProfile(session.user.id);
-      }
-    });
-
-    // Listen to changes
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
-      setSession(session);
-      if (session?.user) {
-        await fetchProfile(session.user.id);
       }
     });
 
@@ -108,7 +103,9 @@ function App() {
         <Route path="/add" element={<PrivateRoute><AddListingScreen /></PrivateRoute>} />
         <Route path="/profile" element={<PrivateRoute><ProfileScreen /></PrivateRoute>} />
         <Route path="/profile/edit" element={<PrivateRoute><EditProfileScreen /></PrivateRoute>} />
+        <Route path="/edit/:id" element={<PrivateRoute><EditListingScreen /></PrivateRoute>} />
         <Route path="/favorites" element={<PrivateRoute><FavoritesScreen /></PrivateRoute>} />
+        <Route path="/admin" element={<PrivateRoute><AdminDashboard /></PrivateRoute>} />
       </Routes>
     </Router>
   );

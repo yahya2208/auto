@@ -22,90 +22,72 @@ export const useAuthStore = create<AuthState>((set) => ({
     set({ session, user: session?.user || null, loading: false });
   },
   fetchProfile: async (userId: string) => {
-    console.log('[AUTH] fetchProfile called for userId:', userId);
+    if (!userId) return;
+    console.log('[AUTH] fetchProfile called for:', userId);
+    
     try {
-      // Use raw fetch to bypass any TypeScript / supabase-js type issues
-      const res = await fetch(
-        `${import.meta.env.VITE_SUPABASE_URL}/rest/v1/profiles?id=eq.${userId}&select=*`,
-        {
-          headers: {
-            'apikey': import.meta.env.VITE_SUPABASE_ANON_KEY,
-            'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
-            'Content-Type': 'application/json',
-          },
-        }
-      );
+      const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
+      const SUPABASE_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY;
+      
+      // Fetch profile using raw fetch to avoid type issues and be more direct
+      const res = await fetch(`${SUPABASE_URL}/rest/v1/profiles?id=eq.${userId}&select=*`, {
+        headers: {
+          'apikey': SUPABASE_KEY,
+          'Authorization': `Bearer ${SUPABASE_KEY}`,
+          'Content-Type': 'application/json',
+        },
+      });
+      
+      if (!res.ok) throw new Error(`HTTP Error: ${res.status}`);
       
       const data = await res.json();
-      console.log('[AUTH] Profile fetch response:', data);
       
       if (Array.isArray(data) && data.length > 0) {
         set({ profile: data[0] as Profile });
-        console.log('[AUTH] Profile set successfully:', data[0].full_name);
+        console.log('[AUTH] Profile loaded');
       } else {
-        console.warn('[AUTH] No profile found, creating fallback from user metadata');
-        // Fallback: create profile object from auth user metadata
-        const { data: { user } } = await supabase.auth.getUser();
-        if (user) {
-          const fallback: Profile = {
+        console.warn('[AUTH] No profile found in DB, attempting to create one...');
+        
+        // Get the current session to get user metadata
+        const { data: { session } } = await supabase.auth.getSession();
+        if (session?.user) {
+          const user = session.user;
+          const fallback = {
             id: user.id,
-            full_name: user.user_metadata?.full_name || 'مستخدم',
+            full_name: user.user_metadata?.full_name || 'مستخدم جديد',
             phone_number: user.user_metadata?.phone_number || '',
             wilaya: user.user_metadata?.wilaya || null,
-            avatar_url: null,
             qr_code_token: user.user_metadata?.qr_code_token || user.id.substring(0, 12),
             total_qr_scans: 0,
             followers_count: 0,
-            created_at: new Date().toISOString(),
+            is_admin: false
+            // Note: we'll skip avatar_url for now in the POST if it might be missing from schema
           };
 
-          // Try to actually insert it into the database to satisfy foreign key constraints!
-          try {
-            const { data: sessionData } = await supabase.auth.getSession();
-            const token = sessionData.session?.access_token || import.meta.env.VITE_SUPABASE_ANON_KEY;
+          // Try to save profile to DB
+          const insertRes = await fetch(`${SUPABASE_URL}/rest/v1/profiles`, {
+            method: 'POST',
+            headers: {
+              'apikey': SUPABASE_KEY,
+              'Authorization': `Bearer ${session.access_token}`,
+              'Content-Type': 'application/json',
+              'Prefer': 'return=representation,resolution=merge-duplicates'
+            },
+            body: JSON.stringify(fallback)
+          });
 
-            await fetch(`${import.meta.env.VITE_SUPABASE_URL}/rest/v1/profiles`, {
-              method: 'POST',
-              headers: {
-                'apikey': import.meta.env.VITE_SUPABASE_ANON_KEY,
-                'Authorization': `Bearer ${token}`,
-                'Content-Type': 'application/json',
-                'Prefer': 'resolution=merge-duplicates'
-              },
-              body: JSON.stringify(fallback)
-            });
-            console.log('[AUTH] Fallback profile saved to DB automatically.');
-          } catch (insertErr) {
-            console.error('[AUTH] Failed to save fallback profile to DB:', insertErr);
+          if (insertRes.ok) {
+            const insertedData = await insertRes.json();
+            set({ profile: insertedData[0] || fallback });
+            console.log('[AUTH] Fallback profile saved successfully');
+          } else {
+            console.error('[AUTH] Fallback insertion failed:', await insertRes.text());
+            set({ profile: fallback as any });
           }
-
-          set({ profile: fallback });
-          console.log('[AUTH] Fallback profile created');
         }
       }
     } catch (err) {
-      console.error('[AUTH] fetchProfile FAILED:', err);
-      // Even on failure, try to create a minimal profile from session
-      try {
-        const { data: { user } } = await supabase.auth.getUser();
-        if (user) {
-          set({
-            profile: {
-              id: user.id,
-              full_name: user.user_metadata?.full_name || user.email || 'مستخدم',
-              phone_number: user.user_metadata?.phone_number || '',
-              wilaya: null,
-              avatar_url: null,
-              qr_code_token: user.id.substring(0, 12),
-              total_qr_scans: 0,
-              followers_count: 0,
-              created_at: new Date().toISOString(),
-            }
-          });
-        }
-      } catch (_) {
-        // Nothing more we can do
-      }
+      console.error('[AUTH] Profile error:', err);
     }
   },
   signOut: async () => {

@@ -55,6 +55,7 @@ const AddListingScreen = () => {
   const [loading, setLoading] = useState(false);
   const [successMsg, setSuccessMsg] = useState('');
   const [errorMsg, setErrorMsg] = useState('');
+  const [uploadProgress, setUploadProgress] = useState({ current: 0, total: 0 });
   
   // Step 1: Category & Type
   const [category, setCategory] = useState<'car'|'motorcycle'|'real_estate'>('car');
@@ -118,33 +119,34 @@ const AddListingScreen = () => {
   };
 
   const uploadMedia = async (listingId: string): Promise<void> => {
-    for (let i = 0; i < files.length; i++) {
+    setUploadProgress({ current: 0, total: files.length });
+    
+    // Upload files in parallel for maximum speed
+    const uploadPromises = files.map(async (file, index) => {
       try {
-        const file = files[i];
         const fileExt = file.name.split('.').pop();
         const isVideo = file.type.startsWith('video/');
-        const fileName = `${listingId}/${Date.now()}_${i}.${fileExt}`;
+        const fileName = `${listingId}/${Date.now()}_${index}.${fileExt}`;
 
+        // 1. Upload to Storage
         const { error: uploadError } = await supabase.storage
           .from('listings')
           .upload(fileName, file);
 
-        if (uploadError) {
-          console.error('خطأ في رفع الملف:', uploadError);
-          continue;
-        }
+        if (uploadError) throw uploadError;
 
+        // 2. Get Public URL
         const { data: { publicUrl } } = supabase.storage
           .from('listings')
           .getPublicUrl(fileName);
 
-        // Use raw fetch for media insert
+        // 3. Save to listing_media table using raw fetch
         const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
         const SUPABASE_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY;
         const { data: sessionData } = await supabase.auth.getSession();
         const token = sessionData.session?.access_token || SUPABASE_KEY;
-        
-        await fetch(`${SUPABASE_URL}/rest/v1/listing_media`, {
+
+        const mediaRes = await fetch(`${SUPABASE_URL}/rest/v1/listing_media`, {
           method: 'POST',
           headers: {
             'apikey': SUPABASE_KEY,
@@ -157,14 +159,26 @@ const AddListingScreen = () => {
             media_type: isVideo ? 'video' : 'image',
             public_url: publicUrl,
             storage_path: fileName,
-            is_cover: i === 0,
-            display_order: i,
+            is_cover: index === 0,
+            display_order: index,
           }),
         });
+
+        if (!mediaRes.ok) {
+          const errText = await mediaRes.text();
+          console.error(`Media insert error for file ${index}:`, errText);
+        }
+
+        // Update progress count
+        setUploadProgress(prev => ({ ...prev, current: prev.current + 1 }));
       } catch (err) {
-        console.error(`خطأ في رفع الصورة ${i}:`, err);
+        console.error(`Error uploading file ${index}:`, err);
+        // Still increment progress to not stuck the UI
+        setUploadProgress(prev => ({ ...prev, current: prev.current + 1 }));
       }
-    }
+    });
+
+    await Promise.all(uploadPromises);
   };
 
   const handleSubmit = async () => {
@@ -631,6 +645,35 @@ const AddListingScreen = () => {
       </div>
     );
   }
+
+  {/* Loading Overlay */}
+  {loading && (
+    <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.85)', backdropFilter: 'blur(10px)', zIndex: 100, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '20px' }}>
+      <div className="spinner" style={{ marginBottom: '20px' }}></div>
+      <h3 style={{ fontSize: '1.2rem', fontWeight: 'bold' }}>جاري نشر إعلانك...</h3>
+      <p style={{ color: 'var(--color-text-secondary)', marginTop: '5px' }}>برجاء عدم إغلاق الصفحة</p>
+      
+      {uploadProgress.total > 0 && (
+        <div style={{ marginTop: '30px', width: '100%', maxWidth: '300px' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '10px', fontSize: '0.9rem' }}>
+            <span>جاري رفع الصور...</span>
+            <span>{Math.round((uploadProgress.current / uploadProgress.total) * 100)}%</span>
+          </div>
+          <div style={{ height: '8px', width: '100%', background: 'rgba(255,255,255,0.1)', borderRadius: '10px', overflow: 'hidden' }}>
+            <div style={{ 
+              height: '100%', 
+              width: `${(uploadProgress.current / uploadProgress.total) * 100}%`, 
+              background: 'linear-gradient(90deg, var(--color-electric), var(--color-accent))',
+              transition: 'width 0.4s ease-out'
+            }}></div>
+          </div>
+          <p style={{ textAlign: 'center', marginTop: '10px', fontSize: '0.8rem', color: 'var(--color-text-secondary)' }}>
+            تم رفع {uploadProgress.current} من {uploadProgress.total} صورة
+          </p>
+        </div>
+      )}
+    </div>
+  )}
 
   return (
     <div style={{ padding: '20px 20px 120px 20px', overflowY: 'auto' }}>

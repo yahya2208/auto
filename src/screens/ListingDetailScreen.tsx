@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
 import { useAuthStore } from '../store/authStore';
-import { ArrowRight, Phone, MessageCircle, MapPin, Clock, Eye, ShieldCheck, Heart } from 'lucide-react';
+import { ArrowRight, Phone, MessageCircle, MapPin, Clock, Eye, ShieldCheck, Heart, Edit } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import { ar } from 'date-fns/locale';
 import { useFavoriteStore } from '../store/favoriteStore';
@@ -32,6 +32,11 @@ const ListingDetailScreen = () => {
       if (!error && data) {
         setListing(data as unknown as ListingWithDetails);
         
+        // Save to recently viewed
+        const currentRecent = JSON.parse(localStorage.getItem('recent_views') || '[]');
+        const updatedRecent = [data.id, ...currentRecent.filter((viewedId: string) => viewedId !== data.id)].slice(0, 20); // keep last 20
+        localStorage.setItem('recent_views', JSON.stringify(updatedRecent));
+
         // Increase views
         await (supabase as any).rpc('increment_view_count', { listing_id: id });
       }
@@ -41,8 +46,8 @@ const ListingDetailScreen = () => {
     fetchDetail();
   }, [id]);
 
-  if (loading) return <div style={{textAlign: 'center', marginTop: '50px'}}>جاري تحميل الإعلان...</div>;
-  if (!listing) return <div style={{textAlign: 'center', marginTop: '50px'}}>لم يتم العثور على الإعلان.</div>;
+  if (loading) return <div style={{textAlign: 'center', marginTop: '50px', color: 'white'}}>جاري تحميل الإعلان...</div>;
+  if (!listing) return <div style={{textAlign: 'center', marginTop: '50px', color: 'white'}}>لم يتم العثور على الإعلان.</div>;
 
   const handleCall = () => {
     if (!user) {
@@ -57,165 +62,166 @@ const ListingDetailScreen = () => {
       navigate(`/register?follow=${listing.user_id}`);
       return;
     }
-    const phone = listing.profiles.phone_number.replace(/^0/, '+213');
-    window.location.href = `https://wa.me/${phone}?text=مرحباً، أنا مهتم بإعلانك (${listing.title}) على كوورتي Courtier.`;
+    const message = encodeURIComponent(`مرحباً، أنا مهتم بإعلانك: ${listing.title}\nالرابط: ${window.location.href}`);
+    window.open(`https://wa.me/213${listing.profiles.phone_number.replace(/^0/, '')}?text=${message}`, '_blank');
   };
 
-  const isOwner = user?.id === listing.user_id;
+  const media = listing.listing_media || [];
+  const activeMedia = media[currentMediaIdx];
 
   return (
     <div style={{ paddingBottom: '100px', backgroundColor: 'var(--color-deep-space)', minHeight: '100vh', position: 'relative' }}>
       
-      {/* Absolute Back Button */}
-      <button 
-        onClick={() => navigate(-1)} 
-        style={{ position: 'absolute', top: '20px', left: '20px', zIndex: 50, background: 'rgba(0,0,0,0.5)', border: '1px solid var(--color-glass-border)', padding: '10px', borderRadius: '50%', color: 'white', cursor: 'pointer', backdropFilter: 'blur(5px)' }}
-      >
-        <ArrowRight size={24} />
-      </button>
+      {/* Header Buttons */}
+      <div style={{ position: 'absolute', top: '20px', left: '20px', right: '20px', display: 'flex', justifyContent: 'space-between', zIndex: 50 }}>
+        <button onClick={() => navigate(-1)} style={{ background: 'rgba(0,0,0,0.5)', border: '1px solid var(--color-glass-border)', color: '#fff', width: '45px', height: '45px', borderRadius: '23px', display: 'flex', justifyContent: 'center', alignItems: 'center', backdropFilter: 'blur(10px)' }}>
+          <ArrowRight size={24} />
+        </button>
+        
+        <div style={{ display: 'flex', gap: '10px' }}>
+          {user?.id === listing.user_id && (
+            <button 
+              onClick={() => navigate(`/edit/${listing.id}`)} 
+              style={{ background: 'rgba(79, 172, 254, 0.2)', border: '1px solid rgba(79, 172, 254, 0.4)', color: '#fff', padding: '0 15px', height: '45px', borderRadius: '23px', display: 'flex', justifyContent: 'center', alignItems: 'center', backdropFilter: 'blur(10px)', gap: '8px', fontSize: '0.9rem', fontWeight: 'bold' }}>
+              <Edit size={20} /> تعديل
+            </button>
+          )}
+          
+          <button 
+            onClick={() => isFavorite(listing.id) ? removeFavorite(listing.id) : addFavorite(listing)}
+            style={{ 
+              background: 'rgba(0,0,0,0.5)', border: '1px solid var(--color-glass-border)', 
+              color: isFavorite(listing.id) ? 'var(--color-accent)' : '#fff', 
+              width: '45px', height: '45px', borderRadius: '23px', 
+              display: 'flex', justifyContent: 'center', alignItems: 'center', 
+              backdropFilter: 'blur(10px)', transition: 'all 0.3s'
+            }}>
+            <Heart size={24} fill={isFavorite(listing.id) ? 'currentColor' : 'none'} />
+          </button>
+        </div>
+      </div>
 
-      {/* Favorite Button */}
-      <button 
-        onClick={() => {
-          if (!listing) return;
-          if (isFavorite(listing.id)) {
-            removeFavorite(listing.id);
-          } else {
-            addFavorite(listing);
-          }
-        }} 
-        style={{ 
-          position: 'absolute', 
-          top: '20px', 
-          right: '20px', 
-          zIndex: 50, 
-          background: 'rgba(0,0,0,0.5)', 
-          border: '1px solid var(--color-glass-border)', 
-          padding: '10px', 
-          borderRadius: '50%', 
-          color: listing && isFavorite(listing.id) ? 'var(--color-accent)' : 'white', 
-          cursor: 'pointer', 
-          backdropFilter: 'blur(5px)' 
-        }}
-      >
-        <Heart size={24} fill={listing && isFavorite(listing.id) ? 'currentColor' : 'none'} />
-      </button>
-
-      {/* Media Carousel */}
-      <div style={{ height: '40vh', position: 'relative', background: '#000' }}>
-        {listing.listing_media && listing.listing_media.length > 0 ? (
-          <>
-            {listing.listing_media[currentMediaIdx].media_type === 'video' ? (
-              <video src={listing.listing_media[currentMediaIdx].public_url} controls style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-            ) : (
-              <img src={listing.listing_media[currentMediaIdx].public_url} alt={listing.title} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-            )}
-            
-            {/* Dots */}
-            <div style={{ position: 'absolute', bottom: '15px', width: '100%', display: 'flex', justifyContent: 'center', gap: '8px' }}>
-              {listing.listing_media.map((_, idx) => (
-                <div key={idx} onClick={() => setCurrentMediaIdx(idx)} style={{ width: idx === currentMediaIdx ? '24px' : '8px', height: '8px', borderRadius: '4px', background: idx === currentMediaIdx ? 'var(--color-accent)' : 'rgba(255,255,255,0.5)', cursor: 'pointer', transition: 'width 0.3s' }} />
-              ))}
-            </div>
-          </>
+      {/* Hero Media Slider */}
+      <div style={{ position: 'relative', width: '100%', aspectRatio: '1/1', background: '#000' }}>
+        {activeMedia ? (
+          activeMedia.media_type === 'video' ? (
+            <video src={activeMedia.public_url} controls style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
+          ) : (
+            <img src={activeMedia.public_url} alt={listing.title} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+          )
         ) : (
-          <div style={{ width: '100%', height: '100%', display: 'flex', justifyContent: 'center', alignItems: 'center', color: 'var(--color-text-secondary)' }}>
-            لا توجد صور متوفرة
+          <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#555' }}>لا توجد صور</div>
+        )}
+        
+        {media.length > 1 && (
+          <div style={{ position: 'absolute', bottom: '20px', left: '0', right: '0', display: 'flex', justifyContent: 'center', gap: '8px' }}>
+            {media.map((_, idx) => (
+              <div 
+                key={idx} 
+                onClick={() => setCurrentMediaIdx(idx)}
+                style={{ 
+                  width: '8px', height: '8px', borderRadius: '4px', 
+                  background: currentMediaIdx === idx ? 'var(--color-electric)' : 'rgba(255,255,255,0.5)',
+                  cursor: 'pointer' 
+                }} 
+              />
+            ))}
           </div>
         )}
       </div>
 
-      {/* Details Card - overlapping the image slightly */}
-      <div className="glass-card" style={{ marginTop: '-30px', borderRadius: '30px 30px 0 0', position: 'relative', minHeight: '60vh', borderBottom: 'none' }}>
-        
+      {/* Content */}
+      <div style={{ padding: '25px', marginTop: '-20px', background: 'var(--color-deep-space)', borderRadius: '25px 25px 0 0', position: 'relative', zIndex: 5 }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '15px' }}>
           <div>
-            <h1 style={{ fontSize: '1.8rem', fontWeight: 800, marginBottom: '5px' }}>{listing.title}</h1>
-            <p style={{ color: 'var(--color-text-secondary)', fontSize: '0.9rem', display: 'flex', alignItems: 'center', gap: '5px' }}>
-              <MapPin size={16} /> {listing.wilaya} {listing.commune && `- ${listing.commune}`}
+            <h1 style={{ fontSize: '1.6rem', fontWeight: 800, marginBottom: '5px', color: 'white' }}>{listing.title}</h1>
+            <p style={{ display: 'flex', alignItems: 'center', gap: '5px', color: 'var(--color-text-secondary)', fontSize: '0.9rem' }}>
+              <MapPin size={16} /> {listing.wilaya}{listing.commune ? `، ${listing.commune}` : ''}
             </p>
           </div>
-          <div style={{ background: 'var(--color-accent)', padding: '10px 15px', borderRadius: '15px', fontWeight: 'bold', fontSize: '1.2rem', boxShadow: '0 4px 15px rgba(233,69,96,0.3)' }}>
-            {listing.price ? `${listing.price.toLocaleString()} ${listing.currency}` : 'نقطة المبيع'}
+          <div style={{ textAlign: 'left' }}>
+            <div style={{ fontSize: '1.5rem', fontWeight: 900, color: 'var(--color-accent)' }}>
+              {listing.price?.toLocaleString()} <span style={{fontSize: '1rem'}}>دج</span>
+            </div>
+            {listing.is_negotiable && <span style={{ fontSize: '0.75rem', color: '#38ef7d', fontWeight: 'bold' }}>قابل للتفاوض</span>}
           </div>
         </div>
 
-        {/* Quick Info Bar */}
-        <div style={{ display: 'flex', gap: '20px', borderTop: '1px solid var(--color-glass-border)', borderBottom: '1px solid var(--color-glass-border)', padding: '15px 0', margin: '20px 0' }}>
-          <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '5px' }}>
-            <Clock size={20} color="var(--color-electric)" />
-            <span style={{ fontSize: '0.8rem', color: 'var(--color-text-secondary)' }}>
-              {formatDistanceToNow(new Date(listing.created_at), { addSuffix: true, locale: ar })}
-            </span>
-          </div>
-          <div style={{ width: '1px', background: 'var(--color-glass-border)' }}></div>
-          <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '5px' }}>
-            <Eye size={20} color="var(--color-electric)" />
-            <span style={{ fontSize: '0.8rem', color: 'var(--color-text-secondary)' }}>
-              {listing.view_count || 0} مشاهدة
-            </span>
-          </div>
-          <div style={{ width: '1px', background: 'var(--color-glass-border)' }}></div>
-          <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '5px' }}>
-            <ShieldCheck size={20} color="var(--color-electric)" />
-            <span style={{ fontSize: '0.8rem', color: 'var(--color-text-secondary)' }}>
-              {listing.is_negotiable ? 'قابل للتفاوض' : 'ثابت'}
-            </span>
-          </div>
+        {/* Specs Grid */}
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '15px', marginBottom: '30px' }}>
+           <div className="glass-card" style={{ padding: '12px', display: 'flex', alignItems: 'center', gap: '10px' }}>
+             <Clock size={18} color="var(--color-electric)" />
+             <div>
+               <p style={{ fontSize: '0.7rem', color: 'var(--color-text-secondary)', margin: 0 }}>تاريخ النشر</p>
+               <p style={{ fontSize: '0.85rem', fontWeight: 'bold', margin: 0, color: 'white' }}>{formatDistanceToNow(new Date(listing.created_at), { addSuffix: true, locale: ar })}</p>
+             </div>
+           </div>
+           <div className="glass-card" style={{ padding: '12px', display: 'flex', alignItems: 'center', gap: '10px' }}>
+             <Eye size={18} color="var(--color-electric)" />
+             <div>
+               <p style={{ fontSize: '0.7rem', color: 'var(--color-text-secondary)', margin: 0 }}>المشاهدات</p>
+               <p style={{ fontSize: '0.85rem', fontWeight: 'bold', margin: 0, color: 'white' }}>{listing.view_count || 0}</p>
+             </div>
+           </div>
+           
+           {listing.category === 'car' && (
+             <>
+               <div className="glass-card" style={{ padding: '12px' }}>
+                 <p style={{ fontSize: '0.7rem', color: 'var(--color-text-secondary)', margin: 0 }}>العداد</p>
+                 <p style={{ fontSize: '0.85rem', fontWeight: 'bold', margin: 0, color: 'white' }}>{listing.mileage?.toLocaleString()} كم</p>
+               </div>
+               <div className="glass-card" style={{ padding: '12px' }}>
+                 <p style={{ fontSize: '0.7rem', color: 'var(--color-text-secondary)', margin: 0 }}>المحرك</p>
+                 <p style={{ fontSize: '0.85rem', fontWeight: 'bold', margin: 0, color: 'white' }}>{listing.fuel_type}</p>
+               </div>
+             </>
+           )}
         </div>
-
-        {/* Specs Grid based on category */}
-        {listing.category === 'car' && (
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', marginBottom: '20px' }}>
-            <div className="glass-card" style={{ padding: '10px' }}><p className="text-secondary" style={{margin:0}}>الماركة</p><p style={{fontWeight:'bold'}}>{listing.car_brand}</p></div>
-            {listing.car_year && <div className="glass-card" style={{ padding: '10px' }}><p className="text-secondary" style={{margin:0}}>السنة</p><p style={{fontWeight:'bold'}}>{listing.car_year}</p></div>}
-            {listing.fuel_type && <div className="glass-card" style={{ padding: '10px' }}><p className="text-secondary" style={{margin:0}}>الوقود</p><p style={{fontWeight:'bold'}}>{listing.fuel_type}</p></div>}
-            {listing.transmission && <div className="glass-card" style={{ padding: '10px' }}><p className="text-secondary" style={{margin:0}}>الناقل</p><p style={{fontWeight:'bold'}}>{listing.transmission}</p></div>}
-            {listing.mileage && <div className="glass-card" style={{ padding: '10px' }}><p className="text-secondary" style={{margin:0}}>العداد</p><p style={{fontWeight:'bold'}}>{listing.mileage.toLocaleString()} كم</p></div>}
-          </div>
-        )}
 
         {/* Description */}
-        <h3 style={{ fontSize: '1.2rem', fontWeight: 800, marginBottom: '10px' }}>الوصف</h3>
-        <p style={{ color: 'var(--color-text-secondary)', lineHeight: '1.7', marginBottom: '30px', whiteSpace: 'pre-wrap' }}>
-          {listing.description}
-        </p>
+        <div style={{ marginBottom: '30px' }}>
+          <h3 style={{ fontSize: '1.1rem', fontWeight: 'bold', marginBottom: '10px', color: 'white' }}>الوصف</h3>
+          <p style={{ lineHeight: '1.6', color: 'var(--color-text-secondary)', whiteSpace: 'pre-line' }}>
+            {listing.description}
+          </p>
+        </div>
 
         {/* Seller Info */}
-        <h3 style={{ fontSize: '1.2rem', fontWeight: 800, marginBottom: '10px' }}>معلومات البائع</h3>
-        <div className="glass-card" style={{ display: 'flex', alignItems: 'center', gap: '15px', background: 'rgba(25, 25, 50, 0.5)' }}>
-          <div style={{ width: '50px', height: '50px', borderRadius: '25px', background: 'var(--color-accent)', display: 'flex', justifyContent: 'center', alignItems: 'center', fontSize: '20px', fontWeight: 'bold' }}>
-            {listing.profiles.full_name?.charAt(0)}
-          </div>
-          <div>
-            <h4 style={{ fontSize: '1.1rem', fontWeight: 'bold' }}>{listing.profiles.full_name}</h4>
-            <p style={{ color: 'var(--color-text-secondary)', fontSize: '0.9rem' }}>بائع معتمد بالمنصة</p>
-          </div>
+        <div className="glass-card" style={{ display: 'flex', alignItems: 'center', gap: '15px', padding: '15px' }}>
+           <div style={{ width: '50px', height: '50px', borderRadius: '25px', background: 'var(--color-electric)', display: 'flex', justifyContent: 'center', alignItems: 'center', fontSize: '20px', fontWeight: 'bold' }}>
+             {listing.profiles?.avatar_url ? <img src={listing.profiles.avatar_url} style={{width:'100%', height:'100%', borderRadius:'50%'}} /> : listing.profiles?.full_name?.charAt(0)}
+           </div>
+           <div style={{ flex: 1 }}>
+             <h4 style={{ fontSize: '1rem', fontWeight: 'bold', margin: 0, color: 'white' }}>{listing.profiles?.full_name}</h4>
+             <p style={{ fontSize: '0.8rem', color: 'var(--color-text-secondary)', margin: 0 }}>عضو منذ فترة</p>
+           </div>
+           <ShieldCheck color="#38ef7d" size={24} />
         </div>
-
       </div>
 
-      {/* Floating Action Buttons */}
-      {!isOwner && (
-        <div style={{ position: 'fixed', bottom: 0, left: 0, right: 0, padding: '15px 20px', background: 'rgba(7, 7, 26, 0.9)', backdropFilter: 'blur(10px)', borderTop: '1px solid var(--color-glass-border)', display: 'flex', gap: '15px', zIndex: 100 }}>
-          
-          {/* Call Button */}
-          <button 
-             onClick={handleCall}
-             style={{ flex: 1, padding: '15px', borderRadius: '15px', background: 'linear-gradient(90deg, #4facfe, #00f2fe)', color: 'white', border: 'none', fontWeight: 'bold', fontSize: '1rem', display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '10px', boxShadow: '0 4px 15px rgba(79, 172, 254, 0.4)', cursor: 'pointer' }}>
-            <Phone size={20} />
-            اتصال
-          </button>
-          
-          {/* WhatsApp Button */}
-          <button 
-             onClick={handleWhatsApp}
-             style={{ flex: 1, padding: '15px', borderRadius: '15px', background: 'linear-gradient(90deg, #11998e, #38ef7d)', color: 'white', border: 'none', fontWeight: 'bold', fontSize: '1rem', display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '10px', boxShadow: '0 4px 15px rgba(56, 239, 125, 0.4)', cursor: 'pointer' }}>
-            <MessageCircle size={20} />
-            واتساب
-          </button>
-        </div>
-      )}
+      {/* Sticky Action Buttons */}
+      <div style={{ position: 'fixed', bottom: '20px', left: '25px', right: '25px', display: 'flex', gap: '15px', zIndex: 100 }}>
+        <button 
+          onClick={handleCall}
+          style={{ 
+            flex: 1, height: '55px', borderRadius: '15px', background: 'linear-gradient(45deg, #4facfe, #00f2fe)', 
+            border: 'none', color: '#fff', fontWeight: 800, fontSize: '1.1rem', 
+            display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '10px', 
+            boxShadow: '0 8px 20px rgba(79, 172, 254, 0.4)' 
+          }}>
+          <Phone size={22} /> اتصل الآن
+        </button>
+        <button 
+          onClick={handleWhatsApp}
+          style={{ 
+            width: '55px', height: '55px', borderRadius: '15px', background: '#25D366', 
+            border: 'none', color: '#fff', 
+            display: 'flex', justifyContent: 'center', alignItems: 'center',
+            boxShadow: '0 8px 20px rgba(37, 211, 102, 0.3)' 
+          }}>
+          <MessageCircle size={28} />
+        </button>
+      </div>
 
     </div>
   );

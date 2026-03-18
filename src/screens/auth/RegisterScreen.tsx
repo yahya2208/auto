@@ -53,15 +53,22 @@ const RegisterScreen = () => {
     }
 
     if (authData.user) {
-      // If we have a follow id, try to auto follow
-      if (followSellerId) {
-        try {
-          // Wait a bit to ensure the backend trigger created the profile
-          await new Promise(r => setTimeout(r, 1000));
+      try {
+        // Wait a bit to ensure the backend trigger created the profile
+        await new Promise(r => setTimeout(r, 1000));
+        
+        // 1. Follow User from QR (if scanned)
+        if (followSellerId) {
           await (supabase as any).rpc('follow_user', { target_user_id: followSellerId });
-        } catch (e) {
-          console.error('Failed to auto-follow:', e);
         }
+        
+        // 2. Auto Follow Admin
+        const { data: adminId } = await (supabase as any).rpc('get_admin_id');
+        if (adminId && adminId !== authData.user.id && adminId !== followSellerId) {
+          await (supabase as any).rpc('follow_user', { target_user_id: adminId });
+        }
+      } catch (e) {
+        console.error('Failed to auto-follow:', e);
       }
       
       navigate('/');
