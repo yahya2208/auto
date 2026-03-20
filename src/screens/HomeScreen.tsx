@@ -2,7 +2,7 @@ import { useEffect, useState, useRef } from 'react';
 import { useListingStore } from '../store/listingStore';
 import { useAuthStore } from '../store/authStore';
 import { useFavoriteStore } from '../store/favoriteStore';
-import { Car, Bike, Home, Search, Heart, Phone, Share2, Info } from 'lucide-react';
+import { Car, Bike, Home, Search, Heart, Phone, Share2, Info, Smartphone, Shirt } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
 const HomeScreen = () => {
@@ -10,7 +10,7 @@ const HomeScreen = () => {
   const { user } = useAuthStore();
   const { isFavorite, addFavorite, removeFavorite } = useFavoriteStore();
   
-  const [filter, setFilter] = useState<'all' | 'car' | 'motorcycle' | 'real_estate'>('all');
+  const [filter, setFilter] = useState<'all' | 'car' | 'motorcycle' | 'real_estate' | 'phone' | 'clothing'>('all');
   const [searchQuery, setSearchQuery] = useState('');
   const navigate = useNavigate();
   
@@ -46,7 +46,20 @@ const HomeScreen = () => {
       case 'car': return <Car size={16} />;
       case 'motorcycle': return <Bike size={16} />;
       case 'real_estate': return <Home size={16} />;
+      case 'phone': return <Smartphone size={16} />;
+      case 'clothing': return <Shirt size={16} />;
       default: return null;
+    }
+  };
+
+  const getCategoryLabel = (cat: string) => {
+    switch (cat) {
+      case 'car': return 'سيارة';
+      case 'motorcycle': return 'دراجة';
+      case 'real_estate': return 'عقار';
+      case 'phone': return 'هاتف';
+      case 'clothing': return 'ملابس';
+      default: return 'إعلان';
     }
   };
 
@@ -101,7 +114,7 @@ const HomeScreen = () => {
       </div>
 
       <div style={{ display: 'flex', gap: '10px', marginBottom: '20px', overflowX: 'auto', paddingBottom: '10px' }} className="no-scrollbar">
-        {['all', 'car', 'motorcycle', 'real_estate'].map((cat) => (
+        {['all', 'car', 'motorcycle', 'real_estate', 'phone', 'clothing'].map((cat) => (
           <button
             key={cat}
             onClick={() => setFilter(cat as any)}
@@ -122,6 +135,8 @@ const HomeScreen = () => {
             {cat === 'car' && 'سيارات 🚗'}
             {cat === 'motorcycle' && 'دراجات 🏍️'}
             {cat === 'real_estate' && 'عقارات 🏠'}
+            {cat === 'phone' && 'هواتف 📱'}
+            {cat === 'clothing' && 'ملابس 👕'}
           </button>
         ))}
       </div>
@@ -182,7 +197,7 @@ const HomeScreen = () => {
                         gap: '5px'
                       }}>
                         {getCategoryIcon(listing.category)}
-                        {listing.category === 'car' ? 'سيارة' : listing.category === 'motorcycle' ? 'دراجة' : 'عقار'}
+                        {getCategoryLabel(listing.category)}
                       </span>
                       <span style={{ fontWeight: 'bold', fontSize: '1.2rem', color: 'var(--color-accent)' }}>
                         {listing.price ? `${listing.price.toLocaleString()} ${listing.currency}` : 'متفاوض'}

@@ -30,7 +30,7 @@ const AdminUsersPage = () => {
   const [filterStatus, setFilterStatus] = useState<'all' | 'admin' | 'verified'>('all');
   const [page, setPage] = useState(0);
   const [toast, setToast] = useState<{ msg: string; type: 'success' | 'error' } | null>(null);
-  const [actionMenu, setActionMenu] = useState<string | null>(null);
+  const [actionMenu, setActionMenu] = useState<{ id: string, rect: DOMRect } | null>(null);
 
   const showToast = (msg: string, type: 'success' | 'error' = 'success') => {
     setToast({ msg, type });
@@ -207,21 +207,16 @@ const AdminUsersPage = () => {
                 </td>
                 <td style={tdStyle}>
                   <div style={{ position: 'relative' }}>
-                    <button onClick={() => setActionMenu(actionMenu === user.id ? null : user.id)}
+                    <button onClick={(e) => {
+                      if (actionMenu?.id === user.id) {
+                        setActionMenu(null);
+                      } else {
+                        setActionMenu({ id: user.id, rect: e.currentTarget.getBoundingClientRect() });
+                      }
+                    }}
                       style={{ background: 'transparent', border: 'none', color: '#fff', cursor: 'pointer', padding: '6px' }}>
                       <MoreVertical size={18} />
                     </button>
-                    {actionMenu === user.id && (
-                      <div style={{
-                        position: 'absolute', left: 0, top: '100%', background: 'rgba(20,20,40,0.98)', border: '1px solid var(--color-glass-border)',
-                        borderRadius: '12px', padding: '8px 0', minWidth: '180px', zIndex: 100, boxShadow: '0 10px 40px rgba(0,0,0,0.5)'
-                      }}>
-                        <MenuBtn icon={<BadgeCheck size={16} color="#1d9bf0" />} label={user.is_verified ? 'إزالة التوثيق' : 'توثيق الحساب ✅'} onClick={() => toggleVerify(user.id, !!user.is_verified)} />
-                        <MenuBtn icon={<Shield size={16} color="#f6d365" />} label={user.is_admin ? 'إزالة الإشراف' : 'ترقية لمشرف'} onClick={() => toggleAdmin(user.id, user.is_admin)} />
-                        <MenuBtn icon={<Ban size={16} color="#ff416c" />} label="حظر المستخدم" onClick={() => banUser(user.id)} danger />
-                        <MenuBtn icon={<UserX size={16} />} label="عرض التفاصيل" onClick={() => { navigate(`/admin/user/${user.id}`); setActionMenu(null); }} />
-                      </div>
-                    )}
                   </div>
                 </td>
               </tr>
@@ -240,6 +235,29 @@ const AdminUsersPage = () => {
             style={{ ...pageBtnStyle, opacity: page >= totalPages - 1 ? 0.4 : 1 }}><ChevronLeft size={18} /></button>
         </div>
       )}
+
+      {/* Action Menu Portal */}
+      {actionMenu && (() => {
+        const selectedUser = users.find(u => u.id === actionMenu.id);
+        if (!selectedUser) return null;
+        return (
+          <>
+            <div style={{ position: 'fixed', inset: 0, zIndex: 999 }} onClick={() => setActionMenu(null)} />
+            <div style={{
+              position: 'fixed',
+              top: Math.min(actionMenu.rect.bottom + 5, window.innerHeight - 200),
+              left: Math.max(10, actionMenu.rect.left - 180),
+              background: 'rgba(20,20,40,0.98)', border: '1px solid var(--color-glass-border)',
+              borderRadius: '12px', padding: '8px 0', minWidth: '180px', zIndex: 1000, boxShadow: '0 10px 40px rgba(0,0,0,0.5)'
+            }}>
+              <MenuBtn icon={<BadgeCheck size={16} color="#1d9bf0" />} label={selectedUser.is_verified ? 'إزالة التوثيق' : 'توثيق الحساب ✅'} onClick={() => toggleVerify(selectedUser.id, !!selectedUser.is_verified)} />
+              <MenuBtn icon={<Shield size={16} color="#f6d365" />} label={selectedUser.is_admin ? 'إزالة الإشراف' : 'ترقية لمشرف'} onClick={() => toggleAdmin(selectedUser.id, !!selectedUser.is_admin)} />
+              <MenuBtn icon={<Ban size={16} color="#ff416c" />} label="حظر المستخدم" onClick={() => banUser(selectedUser.id)} danger />
+              <MenuBtn icon={<UserX size={16} />} label="عرض التفاصيل" onClick={() => { navigate(`/admin/user/${selectedUser.id}`); setActionMenu(null); }} />
+            </div>
+          </>
+        )
+      })()}
     </div>
   );
 };

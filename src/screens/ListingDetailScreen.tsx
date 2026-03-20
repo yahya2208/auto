@@ -176,6 +176,30 @@ const ListingDetailScreen = () => {
                </div>
              </>
            )}
+           {listing.category === 'phone' && (
+             <>
+               <div className="glass-card" style={{ padding: '12px' }}>
+                 <p style={{ fontSize: '0.7rem', color: 'var(--color-text-secondary)', margin: 0 }}>التخزين (GB)</p>
+                 <p style={{ fontSize: '0.85rem', fontWeight: 'bold', margin: 0, color: 'white' }}>{listing.storage_capacity || '-'} GB</p>
+               </div>
+               <div className="glass-card" style={{ padding: '12px' }}>
+                 <p style={{ fontSize: '0.7rem', color: 'var(--color-text-secondary)', margin: 0 }}>الرام (GB)</p>
+                 <p style={{ fontSize: '0.85rem', fontWeight: 'bold', margin: 0, color: 'white' }}>{listing.ram || '-'} GB</p>
+               </div>
+             </>
+           )}
+           {listing.category === 'clothing' && (
+             <>
+               <div className="glass-card" style={{ padding: '12px' }}>
+                 <p style={{ fontSize: '0.7rem', color: 'var(--color-text-secondary)', margin: 0 }}>الماركة العالمية</p>
+                 <p style={{ fontSize: '0.85rem', fontWeight: 'bold', margin: 0, color: 'white' }}>{listing.clothing_brand || '-'}</p>
+               </div>
+               <div className="glass-card" style={{ padding: '12px' }}>
+                 <p style={{ fontSize: '0.7rem', color: 'var(--color-text-secondary)', margin: 0 }}>المقاس</p>
+                 <p style={{ fontSize: '0.85rem', fontWeight: 'bold', margin: 0, color: 'white' }}>{listing.clothing_size || '-'}</p>
+               </div>
+             </>
+           )}
         </div>
 
         {/* Description */}

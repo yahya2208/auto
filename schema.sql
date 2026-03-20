@@ -268,6 +268,30 @@ DO $$ BEGIN
 EXCEPTION WHEN OTHERS THEN NULL;
 END $$;
 
+-------------------------------------------------------
+-- 9. تحديث إضافة سوق الهواتف والملابس الأصلية (Marketplace Expansion)
+-------------------------------------------------------
+DO $$ BEGIN
+  -- Drop category check constraint to allow new types
+  ALTER TABLE public.listings DROP CONSTRAINT IF EXISTS listings_category_check;
+  -- Re-add with new categories
+  ALTER TABLE public.listings ADD CONSTRAINT listings_category_check CHECK (category IN ('car', 'motorcycle', 'real_estate', 'phone', 'clothing'));
+  
+  -- Add specific fields for Phones
+  ALTER TABLE public.listings ADD COLUMN IF NOT EXISTS phone_brand TEXT;
+  ALTER TABLE public.listings ADD COLUMN IF NOT EXISTS phone_model TEXT;
+  ALTER TABLE public.listings ADD COLUMN IF NOT EXISTS storage_capacity INTEGER;
+  ALTER TABLE public.listings ADD COLUMN IF NOT EXISTS ram INTEGER;
+  
+  -- Add specific fields for Clothing (Original Brands)
+  ALTER TABLE public.listings ADD COLUMN IF NOT EXISTS clothing_category TEXT;
+  ALTER TABLE public.listings ADD COLUMN IF NOT EXISTS clothing_type TEXT;
+  ALTER TABLE public.listings ADD COLUMN IF NOT EXISTS clothing_brand TEXT;
+  ALTER TABLE public.listings ADD COLUMN IF NOT EXISTS clothing_size TEXT;
+  ALTER TABLE public.listings ADD COLUMN IF NOT EXISTS clothing_gender TEXT;
+EXCEPTION WHEN OTHERS THEN NULL;
+END $$;
+
 
 -------------------------------------------------------
 -- 7. إعداد حاوية التخزين (Storage Bucket) للصور

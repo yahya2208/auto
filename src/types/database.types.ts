@@ -42,7 +42,7 @@ export interface Database {
         Row: {
           id: string;
           user_id: string;
-          category: 'car' | 'motorcycle' | 'real_estate';
+          category: 'car' | 'motorcycle' | 'real_estate' | 'phone' | 'clothing';
           listing_type: 'sell' | 'buy' | 'exchange';
           title: string;
           description: string;
@@ -53,6 +53,7 @@ export interface Database {
           is_negotiable: boolean;
           is_active: boolean;
           view_count: number;
+          share_count: number;
           car_brand: string | null;
           car_model: string | null;
           car_year: number | null;
@@ -70,6 +71,15 @@ export interface Database {
           has_elevator: boolean;
           has_parking: boolean;
           has_garden: boolean;
+          phone_brand: string | null;
+          phone_model: string | null;
+          storage_capacity: number | null;
+          ram: number | null;
+          clothing_category: string | null;
+          clothing_type: string | null;
+          clothing_brand: string | null;
+          clothing_size: string | null;
+          clothing_gender: string | null;
           created_at: string;
           updated_at: string;
         };

@@ -15,6 +15,8 @@ const CATEGORIES = [
   { id: 'car', label: 'سيارة', emoji: '🚗', color: '#4facfe' },
   { id: 'motorcycle', label: 'دراجة', emoji: '🏍️', color: '#e94560' },
   { id: 'real_estate', label: 'عقار', emoji: '🏠', color: '#38ef7d' },
+  { id: 'phone', label: 'هاتف', emoji: '📱', color: '#f6d365' },
+  { id: 'clothing', label: 'ملابس', emoji: '👕', color: '#ff416c' },
 ];
 
 const FUEL_TYPES = [
@@ -58,7 +60,7 @@ const AddListingScreen = () => {
   const [uploadProgress, setUploadProgress] = useState({ current: 0, total: 0 });
   
   // Step 1: Category & Type
-  const [category, setCategory] = useState<'car'|'motorcycle'|'real_estate'>('car');
+  const [category, setCategory] = useState<'car'|'motorcycle'|'real_estate'|'phone'|'clothing'>('car');
   const [listingType, setListingType] = useState('sell');
   
   // Step 2: Details
@@ -82,6 +84,19 @@ const AddListingScreen = () => {
   const [hasParking, setHasParking] = useState(false);
   const [hasGarden, setHasGarden] = useState(false);
   
+  // Step 2: Details - Phone
+  const [phoneBrand, setPhoneBrand] = useState('');
+  const [phoneModel, setPhoneModel] = useState('');
+  const [storageCapacity, setStorageCapacity] = useState('');
+  const [ram, setRam] = useState('');
+
+  // Step 2: Details - Clothing
+  const [clothingCategory, setClothingCategory] = useState('clothes');
+  const [clothingType, setClothingType] = useState('');
+  const [clothingBrand, setClothingBrand] = useState('');
+  const [clothingSize, setClothingSize] = useState('');
+  const [clothingGender, setClothingGender] = useState('unisex');
+  
   // Step 3: Price & Location
   const [price, setPrice] = useState('');
   const [isNegotiable, setIsNegotiable] = useState(false);
@@ -99,6 +114,12 @@ const AddListingScreen = () => {
     }
     if (category === 'motorcycle' && motoBrand && motoModel) {
       return `${motoBrand} ${motoModel}`;
+    }
+    if (category === 'phone' && phoneBrand && phoneModel) {
+      return `${phoneBrand} ${phoneModel}${storageCapacity ? ` ${storageCapacity}GB` : ''}`;
+    }
+    if (category === 'clothing' && clothingBrand && clothingType) {
+      return `${clothingBrand} ${clothingType}${clothingSize ? ` المقاس ${clothingSize}` : ''}`;
     }
     return title;
   };
@@ -227,6 +248,19 @@ const AddListingScreen = () => {
         listingPayload.has_elevator = hasElevator;
         listingPayload.has_parking = hasParking;
         listingPayload.has_garden = hasGarden;
+      } else if (category === 'phone') {
+        listingPayload.phone_brand = phoneBrand || null;
+        listingPayload.phone_model = phoneModel || null;
+        listingPayload.storage_capacity = storageCapacity ? parseInt(storageCapacity) : null;
+        listingPayload.ram = ram ? parseInt(ram) : null;
+        listingPayload.condition = condition || null;
+      } else if (category === 'clothing') {
+        listingPayload.clothing_category = clothingCategory || null;
+        listingPayload.clothing_type = clothingType || null;
+        listingPayload.clothing_brand = clothingBrand || null;
+        listingPayload.clothing_size = clothingSize || null;
+        listingPayload.clothing_gender = clothingGender || null;
+        listingPayload.condition = condition || null;
       }
 
       console.log('📤 Inserting listing...', listingPayload);
@@ -393,7 +427,7 @@ const AddListingScreen = () => {
   const renderStep2 = () => (
     <div style={{ animation: 'fadeInUp 0.4s ease' }}>
       <h3 style={{ fontSize: '1.4rem', fontWeight: 800, marginBottom: '8px' }}>
-        {category === 'car' ? '🚗 تفاصيل السيارة' : category === 'motorcycle' ? '🏍️ تفاصيل الدراجة' : '🏠 تفاصيل العقار'}
+        {category === 'car' ? '🚗 تفاصيل السيارة' : category === 'motorcycle' ? '🏍️ تفاصيل الدراجة' : category === 'real_estate' ? '🏠 تفاصيل العقار' : category === 'phone' ? '📱 تفاصيل الهاتف' : '👕 تفاصيل الملابس'}
       </h3>
       <p className="text-secondary" style={{ marginBottom: '20px' }}>أضف المعلومات الأساسية</p>
 
@@ -554,6 +588,85 @@ const AddListingScreen = () => {
             <label style={checkboxChipStyle(hasElevator)}><input type="checkbox" checked={hasElevator} onChange={e => setHasElevator(e.target.checked)} style={{display:'none'}} /> 🛗 مصعد</label>
             <label style={checkboxChipStyle(hasParking)}><input type="checkbox" checked={hasParking} onChange={e => setHasParking(e.target.checked)} style={{display:'none'}} /> 🅿️ مرآب</label>
             <label style={checkboxChipStyle(hasGarden)}><input type="checkbox" checked={hasGarden} onChange={e => setHasGarden(e.target.checked)} style={{display:'none'}} /> 🌿 حديقة</label>
+          </div>
+        </div>
+      )}
+
+      {category === 'phone' && (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
+          <div>
+            <label style={labelStyle}>الماركة (Brand) *</label>
+            <input type="text" value={phoneBrand} onChange={e => setPhoneBrand(e.target.value)} style={inputStyle} placeholder="مثال: Apple, Samsung, Xiaomi..." />
+          </div>
+          <div>
+            <label style={labelStyle}>الموديل *</label>
+            <input type="text" value={phoneModel} onChange={e => setPhoneModel(e.target.value)} style={inputStyle} placeholder="مثال: iPhone 14 Pro, S24 Ultra..." />
+          </div>
+          <div style={{ display: 'flex', gap: '10px' }}>
+            <div style={{ flex: 1 }}>
+              <label style={labelStyle}>التخزين (GB)</label>
+              <input type="number" value={storageCapacity} onChange={e => setStorageCapacity(e.target.value)} style={inputStyle} placeholder="128, 256, 512" />
+            </div>
+            <div style={{ flex: 1 }}>
+              <label style={labelStyle}>الرام (GB)</label>
+              <input type="number" value={ram} onChange={e => setRam(e.target.value)} style={inputStyle} placeholder="4, 8, 12" />
+            </div>
+          </div>
+          <div>
+            <label style={labelStyle}>الحالة</label>
+            <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+              {CONDITION_TYPES.map(c => (
+                <div key={c.value} onClick={() => setCondition(c.value)} style={{
+                  ...chipStyle,
+                  border: `1px solid ${condition === c.value ? c.color : 'var(--color-glass-border)'}`,
+                  background: condition === c.value ? `${c.color}20` : 'transparent',
+                }}>
+                  {c.emoji} {c.label}
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {category === 'clothing' && (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
+          <div>
+            <label style={labelStyle}>الماركة الأصلية (Brand) *</label>
+            <input type="text" value={clothingBrand} onChange={e => setClothingBrand(e.target.value)} style={inputStyle} placeholder="مثال: Nike, Puma, Adidas..." />
+          </div>
+          <div style={{ display: 'flex', gap: '10px' }}>
+            <div style={{ flex: 1 }}>
+              <label style={labelStyle}>النوع / الصنف</label>
+              <input type="text" value={clothingType} onChange={e => setClothingType(e.target.value)} style={inputStyle} placeholder="حذاء رياضي، جاكيت، سويت شيرت..." />
+            </div>
+            <div style={{ flex: 1 }}>
+              <label style={labelStyle}>المقاس (Size)</label>
+              <input type="text" value={clothingSize} onChange={e => setClothingSize(e.target.value)} style={inputStyle} placeholder="S, M, L, XL أو 42, 43..." />
+            </div>
+          </div>
+          <div>
+            <label style={labelStyle}>الفئة والجنس</label>
+            <select value={clothingGender} onChange={e => setClothingGender(e.target.value)} style={inputStyle}>
+              <option value="unisex" style={{color: '#000'}}>للجنسين</option>
+              <option value="men" style={{color: '#000'}}>رجالي</option>
+              <option value="women" style={{color: '#000'}}>نسائي</option>
+              <option value="kids" style={{color: '#000'}}>أطفال</option>
+            </select>
+          </div>
+          <div>
+            <label style={labelStyle}>الحالة</label>
+            <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+              {CONDITION_TYPES.map(c => (
+                <div key={c.value} onClick={() => setCondition(c.value)} style={{
+                  ...chipStyle,
+                  border: `1px solid ${condition === c.value ? c.color : 'var(--color-glass-border)'}`,
+                  background: condition === c.value ? `${c.color}20` : 'transparent',
+                }}>
+                  {c.emoji} {c.label}
+                </div>
+              ))}
+            </div>
           </div>
         </div>
       )}
