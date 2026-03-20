@@ -237,6 +237,39 @@ const AddListingScreen = () => {
       const { data: sessionData } = await supabase.auth.getSession();
       const token = sessionData.session?.access_token || SUPABASE_KEY;
 
+      // 1. SAFETY: Ensure profile exists before inserting listing
+      console.log('🔍 Safety check: verifying profile exists...');
+      const profileCheck = await fetch(`${SUPABASE_URL}/rest/v1/profiles?id=eq.${user.id}&select=id`, {
+        headers: {
+          'apikey': SUPABASE_KEY,
+          'Authorization': `Bearer ${token}`
+        }
+      });
+      const profileData = await profileCheck.json();
+      
+      if (!profileCheck.ok || !profileData || profileData.length === 0) {
+        console.warn('⚠️ Profile missing! Attempting emergency creation...');
+        const qrToken = Math.random().toString(36).substring(2, 11);
+        await fetch(`${SUPABASE_URL}/rest/v1/profiles`, {
+          method: 'POST',
+          headers: {
+            'apikey': SUPABASE_KEY,
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json',
+            'Prefer': 'resolution=merge-duplicates'
+          },
+          body: JSON.stringify({
+            id: user.id,
+            full_name: user.user_metadata?.full_name || 'مستخدم',
+            phone_number: user.user_metadata?.phone_number || '',
+            wilaya: wilaya || user.user_metadata?.wilaya || 'غير محدد',
+            qr_code_token: qrToken,
+            is_admin: false
+          })
+        });
+      }
+
+      // 2. Insert listing
       const insertRes = await fetch(`${SUPABASE_URL}/rest/v1/listings`, {
         method: 'POST',
         headers: {
