@@ -263,6 +263,8 @@ DO $$ BEGIN
   ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS avatar_url TEXT;
   ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS followers_count INTEGER DEFAULT 0;
   ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS is_admin BOOLEAN DEFAULT false;
+  ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS is_verified BOOLEAN DEFAULT false;
+  ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS status TEXT DEFAULT 'active';
 EXCEPTION WHEN OTHERS THEN NULL;
 END $$;
 

@@ -16,6 +16,8 @@ import FavoritesScreen from './screens/FavoritesScreen';
 import SellerProfileScreen from './screens/SellerProfileScreen';
 import ListingDetailScreen from './screens/ListingDetailScreen';
 import AdminDashboard from './screens/admin/AdminDashboard';
+import AdminUsersPage from './screens/admin/AdminUsersPage';
+import AdminUserDetail from './screens/admin/AdminUserDetail';
 
 // Main Layout with Bottom Nav
 const MainLayout = ({ children }: { children: React.ReactNode }) => {
@@ -106,6 +108,8 @@ function App() {
         <Route path="/edit/:id" element={<PrivateRoute><EditListingScreen /></PrivateRoute>} />
         <Route path="/favorites" element={<PrivateRoute><FavoritesScreen /></PrivateRoute>} />
         <Route path="/admin" element={<PrivateRoute><AdminDashboard /></PrivateRoute>} />
+        <Route path="/admin/users" element={<PrivateRoute><AdminUsersPage /></PrivateRoute>} />
+        <Route path="/admin/user/:userId" element={<PrivateRoute><AdminUserDetail /></PrivateRoute>} />
       </Routes>
     </Router>
   );

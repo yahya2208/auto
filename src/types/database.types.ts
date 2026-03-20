@@ -11,6 +11,9 @@ export interface Database {
           qr_code_token: string;
           total_qr_scans: number;
           followers_count: number;
+          is_admin: boolean;
+          is_verified: boolean;
+          status: string | null;
           created_at: string;
         };
         Insert: {

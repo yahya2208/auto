@@ -45,6 +45,11 @@ const ProfileScreen = () => {
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
         <h2 style={{ fontSize: '1.5rem', fontWeight: 800 }}>حسابي</h2>
         <div style={{ display: 'flex', gap: '10px' }}>
+          {profile.is_admin && (
+            <button onClick={() => navigate('/admin')} style={{ background: 'linear-gradient(90deg,#f6d365,#fda085)', border: 'none', color: '#fff', padding: '8px 12px', borderRadius: '10px', display: 'flex', gap: '5px', cursor: 'pointer', fontWeight: 'bold', fontSize: '0.85rem' }}>
+              🛡️ لوحة التحكم
+            </button>
+          )}
           <button onClick={() => navigate('/profile/edit')} style={{ background: 'transparent', border: '1px solid var(--color-glass-border)', color: 'var(--color-electric)', padding: '8px 12px', borderRadius: '10px', display: 'flex', gap: '5px' }}>
             تعديل
           </button>
