@@ -72,13 +72,21 @@ const ProfileScreen = () => {
 
       {/* Stats Row */}
       <div style={{ display: 'flex', gap: '15px', marginBottom: '30px' }}>
-        <div className="glass-card" style={{ flex: 1, textAlign: 'center' }}>
+        <div 
+          className="glass-card" 
+          style={{ flex: 1, textAlign: 'center', cursor: 'pointer' }}
+          onClick={() => navigate(`/seller/${profile.qr_code_token}`)}
+        >
           <p style={{ color: 'var(--color-text-secondary)', fontSize: '0.9rem' }}>إجمالي الإعلانات</p>
           <h2 style={{ fontSize: '1.8rem', color: 'var(--color-electric)', fontWeight: 800 }}>{totalListings}</h2>
         </div>
         <div className="glass-card" style={{ flex: 1, textAlign: 'center' }}>
-          <p style={{ color: 'var(--color-text-secondary)', fontSize: '0.9rem' }}>عدد الزيارات (الرمز)</p>
-          <h2 style={{ fontSize: '1.8rem', color: 'var(--color-accent)', fontWeight: 800 }}>{profile.total_qr_scans || 0}</h2>
+          <p style={{ color: 'var(--color-text-secondary)', fontSize: '0.9rem' }}>المتابعين</p>
+          <h2 style={{ fontSize: '1.8rem', color: 'var(--color-accent)', fontWeight: 800 }}>{profile.followers_count || 0}</h2>
+        </div>
+        <div className="glass-card" style={{ flex: 1, textAlign: 'center' }}>
+          <p style={{ color: 'var(--color-text-secondary)', fontSize: '0.9rem' }}>الزيارات</p>
+          <h2 style={{ fontSize: '1.8rem', color: '#38ef7d', fontWeight: 800 }}>{profile.total_qr_scans || 0}</h2>
         </div>
       </div>
 
