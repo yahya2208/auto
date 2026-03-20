@@ -2,7 +2,7 @@ import { useEffect, useState, useRef } from 'react';
 import { useListingStore } from '../store/listingStore';
 import { useAuthStore } from '../store/authStore';
 import { useFavoriteStore } from '../store/favoriteStore';
-import { Car, Bike, Home, Search, Heart, Phone, Share2, Info, Smartphone, Shirt } from 'lucide-react';
+import { Car, Bike, Home, Search, Heart, Phone, Share2, Info, Smartphone, Shirt, Camera } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
 const HomeScreen = () => {
@@ -182,6 +182,18 @@ const HomeScreen = () => {
                       <img src={secondImage} alt="background layer" style={{ position: 'absolute', width: '90%', height: '180px', left: '5%', top: '-8px', objectFit: 'cover', borderRadius: '15px', opacity: 0.6, zIndex: 1 }} />
                     )}
                     <img src={cover} alt={listing.title} style={{ position: 'absolute', width: '100%', height: '200px', objectFit: 'cover', borderRadius: '15px', zIndex: 2, boxShadow: '0 10px 20px rgba(0,0,0,0.3)', userSelect: 'none' }} />
+                    
+                    {hasMultiple && (
+                      <div style={{
+                        position: 'absolute', bottom: '10px', left: '10px', zIndex: 3,
+                        background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(5px)',
+                        padding: '4px 10px', borderRadius: '12px', color: '#fff',
+                        display: 'flex', alignItems: 'center', gap: '5px',
+                        fontSize: '0.8rem', fontWeight: 'bold'
+                      }}>
+                        <Camera size={14} /> +{mediaList.length - 1}
+                      </div>
+                    )}
                   </div>
 
                   <div style={{ padding: '15px' }}>

@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
 import { useAuthStore } from '../store/authStore';
-import { ArrowRight, Phone, MessageCircle, MapPin, Clock, Eye, ShieldCheck, Heart, Edit } from 'lucide-react';
+import { ArrowRight, Phone, MessageCircle, MapPin, Clock, Eye, ShieldCheck, Heart, Edit, ChevronLeft, ChevronRight } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import { ar } from 'date-fns/locale';
 import { useFavoriteStore } from '../store/favoriteStore';
@@ -66,8 +66,21 @@ const ListingDetailScreen = () => {
     window.open(`https://wa.me/213${listing.profiles.phone_number.replace(/^0/, '')}?text=${message}`, '_blank');
   };
 
+
   const media = listing.listing_media || [];
   const activeMedia = media[currentMediaIdx];
+
+  const handleNextMedia = (e?: any) => {
+    if (e) e.stopPropagation();
+    if (media.length <= 1) return;
+    setCurrentMediaIdx(prev => (prev + 1) % media.length);
+  };
+
+  const handlePrevMedia = (e?: any) => {
+    if (e) e.stopPropagation();
+    if (media.length <= 1) return;
+    setCurrentMediaIdx(prev => (prev - 1 + media.length) % media.length);
+  };
 
   return (
     <div style={{ paddingBottom: '100px', backgroundColor: 'var(--color-deep-space)', minHeight: '100vh', position: 'relative' }}>
@@ -102,10 +115,10 @@ const ListingDetailScreen = () => {
       </div>
 
       {/* Hero Media Slider */}
-      <div style={{ position: 'relative', width: '100%', aspectRatio: '1/1', background: '#000' }}>
+      <div style={{ position: 'relative', width: '100%', aspectRatio: '1/1', background: '#000', overflow: 'hidden' }} onClick={handleNextMedia}>
         {activeMedia ? (
           activeMedia.media_type === 'video' ? (
-            <video src={activeMedia.public_url} controls style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
+            <video src={activeMedia.public_url} controls style={{ width: '100%', height: '100%', objectFit: 'contain' }} onClick={(e) => e.stopPropagation()} />
           ) : (
             <img src={activeMedia.public_url} alt={listing.title} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
           )
@@ -114,19 +127,39 @@ const ListingDetailScreen = () => {
         )}
         
         {media.length > 1 && (
-          <div style={{ position: 'absolute', bottom: '20px', left: '0', right: '0', display: 'flex', justifyContent: 'center', gap: '8px' }}>
-            {media.map((_, idx) => (
-              <div 
-                key={idx} 
-                onClick={() => setCurrentMediaIdx(idx)}
-                style={{ 
-                  width: '8px', height: '8px', borderRadius: '4px', 
-                  background: currentMediaIdx === idx ? 'var(--color-electric)' : 'rgba(255,255,255,0.5)',
-                  cursor: 'pointer' 
-                }} 
-              />
-            ))}
-          </div>
+          <>
+            {/* Nav Arrows */}
+            <button 
+              onClick={handlePrevMedia} 
+              style={{ position: 'absolute', right: '15px', top: '50%', transform: 'translateY(-50%)', background: 'rgba(0,0,0,0.4)', backdropFilter: 'blur(5px)', border: 'none', color: 'white', padding: '10px', borderRadius: '50%', cursor: 'pointer', zIndex: 10 }}>
+              <ChevronRight size={24} />
+            </button>
+            <button 
+              onClick={handleNextMedia} 
+              style={{ position: 'absolute', left: '15px', top: '50%', transform: 'translateY(-50%)', background: 'rgba(0,0,0,0.4)', backdropFilter: 'blur(5px)', border: 'none', color: 'white', padding: '10px', borderRadius: '50%', cursor: 'pointer', zIndex: 10 }}>
+              <ChevronLeft size={24} />
+            </button>
+
+            {/* Dots */}
+            <div style={{ position: 'absolute', bottom: '30px', left: '0', right: '0', display: 'flex', justifyContent: 'center', gap: '8px', zIndex: 10 }} onClick={(e) => e.stopPropagation()}>
+              {media.map((_, idx) => (
+                <div 
+                  key={idx} 
+                  onClick={() => setCurrentMediaIdx(idx)}
+                  style={{ 
+                    width: currentMediaIdx === idx ? '20px' : '8px', height: '8px', borderRadius: '4px', 
+                    background: currentMediaIdx === idx ? 'var(--color-electric)' : 'rgba(255,255,255,0.5)',
+                    cursor: 'pointer', transition: 'all 0.3s ease'
+                  }} 
+                />
+              ))}
+            </div>
+            
+            {/* Image Counter Badge */}
+            <div style={{ position: 'absolute', top: '20px', right: '20px', background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(5px)', padding: '5px 12px', borderRadius: '20px', color: 'white', fontSize: '0.8rem', fontWeight: 'bold', zIndex: 10 }} onClick={(e) => e.stopPropagation()}>
+              {currentMediaIdx + 1} / {media.length}
+            </div>
+          </>
         )}
       </div>
 

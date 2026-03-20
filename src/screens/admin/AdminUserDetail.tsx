@@ -177,6 +177,9 @@ const AdminUserDetail = () => {
             <MiniStat label="🚗 سيارات" value={listings.filter(l => l.category === 'car').length} />
             <MiniStat label="🏍️ دراجات" value={listings.filter(l => l.category === 'motorcycle').length} />
             <MiniStat label="🏠 عقارات" value={listings.filter(l => l.category === 'real_estate').length} />
+            <MiniStat label="📱 هواتف" value={listings.filter(l => l.category === 'phone').length} />
+            <MiniStat label="👕 ملابس" value={listings.filter(l => l.category === 'clothing').length} />
+            <MiniStat label="🔴 معطلة" value={listings.filter(l => !l.is_active).length} />
           </div>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: '8px', marginBottom: '12px' }}>
             <MiniStat label="👁️ مشاهدات" value={listings.reduce((sum: number, l: any) => sum + (l.view_count || 0), 0)} />

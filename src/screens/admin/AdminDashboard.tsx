@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { supabase } from '../../lib/supabase';
 import { useAuthStore } from '../../store/authStore';
 import { useNavigate } from 'react-router-dom';
-import { Users, Car, Bike, Home, MessageSquare, TrendingUp, BarChart, ArrowRight, Eye, Share2, BadgeCheck, Shield, Settings, Bell, ChevronLeft } from 'lucide-react';
+import { Users, Car, Bike, Home, MessageSquare, TrendingUp, BarChart, ArrowRight, Eye, Share2, BadgeCheck, Shield, Settings, Bell, ChevronLeft, Smartphone, Shirt } from 'lucide-react';
 
 interface Stats {
   totalUsers: number;
@@ -10,6 +10,8 @@ interface Stats {
   carsCount: number;
   bikesCount: number;
   realEstateCount: number;
+  phonesCount: number;
+  clothingCount: number;
   totalComments: number;
   verifiedUsers: number;
   adminCount: number;
@@ -21,7 +23,7 @@ const AdminDashboard = () => {
   const [loading, setLoading] = useState(true);
   const [stats, setStats] = useState<Stats>({
     totalUsers: 0, totalListings: 0, carsCount: 0, bikesCount: 0,
-    realEstateCount: 0, totalComments: 0, verifiedUsers: 0, adminCount: 0
+    realEstateCount: 0, phonesCount: 0, clothingCount: 0, totalComments: 0, verifiedUsers: 0, adminCount: 0
   });
   const [topListings, setTopListings] = useState<any[]>([]);
   const [recentUsers, setRecentUsers] = useState<any[]>([]);
@@ -47,6 +49,8 @@ const AdminDashboard = () => {
           carsCount: allListings.filter(l => l.category === 'car').length,
           bikesCount: allListings.filter(l => l.category === 'motorcycle').length,
           realEstateCount: allListings.filter(l => l.category === 'real_estate').length,
+          phonesCount: allListings.filter(l => l.category === 'phone').length,
+          clothingCount: allListings.filter(l => l.category === 'clothing').length,
           totalComments: (commentsRes.data || []).length,
           verifiedUsers: allUsers.filter((u: any) => u.is_verified).length,
           adminCount: allUsers.filter((u: any) => u.is_admin).length,
@@ -85,6 +89,8 @@ const AdminDashboard = () => {
         <StatCard title="السيارات" value={stats.carsCount} icon={<Car />} color="#f6d365" />
         <StatCard title="الدراجات" value={stats.bikesCount} icon={<Bike />} color="#ff0844" />
         <StatCard title="العقارات" value={stats.realEstateCount} icon={<Home />} color="#89216b" />
+        <StatCard title="الهواتف" value={stats.phonesCount} icon={<Smartphone />} color="#4facfe" />
+        <StatCard title="الملابس" value={stats.clothingCount} icon={<Shirt />} color="#ff6b8a" />
       </div>
 
       {/* Recent Users */}
@@ -128,7 +134,7 @@ const AdminDashboard = () => {
               </div>
             </div>
             <div style={{ background: 'rgba(255,255,255,0.1)', padding: '4px 10px', borderRadius: '8px', fontSize: '0.75rem' }}>
-              {listing.category === 'car' ? '🚗' : listing.category === 'motorcycle' ? '🏍️' : '🏠'}
+              {listing.category === 'car' ? '🚗' : listing.category === 'motorcycle' ? '🏍️' : listing.category === 'real_estate' ? '🏠' : listing.category === 'phone' ? '📱' : '👕'}
             </div>
           </div>
         ))}
