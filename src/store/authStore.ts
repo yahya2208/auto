@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import { supabase } from '../lib/supabase';
+import { supabase, supabaseUrl, supabaseAnonKey } from '../lib/supabase';
 import type { Session, User } from '@supabase/supabase-js';
 import type { Profile } from '../types/database.types';
 
@@ -26,8 +26,8 @@ export const useAuthStore = create<AuthState>((set) => ({
     console.log('[AUTH] fetchProfile called for:', userId);
     
     try {
-      const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
-      const SUPABASE_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY;
+      const SUPABASE_URL = supabaseUrl;
+      const SUPABASE_KEY = supabaseAnonKey;
       
       // Fetch profile using raw fetch to avoid type issues and be more direct
       const res = await fetch(`${SUPABASE_URL}/rest/v1/profiles?id=eq.${userId}&select=*`, {

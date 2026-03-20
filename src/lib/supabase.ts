@@ -1,14 +1,8 @@
 import { createClient } from '@supabase/supabase-js';
 import type { Database } from '../types/database.types';
 
-const envUrl = import.meta.env.VITE_SUPABASE_URL;
-const envKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
-
-const supabaseUrl = (envUrl && envUrl.startsWith('http')) ? envUrl : 'https://temp.supabase.co';
-const supabaseAnonKey = envKey || 'missing';
-
-if (!envUrl || !envUrl.startsWith('http')) {
-  console.error('[SUPABASE] CRITICAL: VITE_SUPABASE_URL is missing or invalid in .env');
-}
+// Hardcoded values to fix ENV loading issues in browser (Vite .env sync delay)
+export const supabaseUrl = 'https://ilocxuvtmqlgbcvtqeqr.supabase.co';
+export const supabaseAnonKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imlsb2N4dXZ0bXFsZ2JjdnRxZXFyIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc3MzIzMjIyMywiZXhwIjoyMDg4ODA4MjIzfQ.cam22bC6sVwjRN2IlVjOSaIWc-HT0WtjCBGa31fNItg';
 
 export const supabase = createClient<Database>(supabaseUrl, supabaseAnonKey);
