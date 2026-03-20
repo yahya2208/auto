@@ -32,22 +32,22 @@ const AdminDashboard = () => {
     const fetchStats = async () => {
       try {
         const [usersRes, listingsRes, commentsRes, topRes, recentRes] = await Promise.all([
-          supabase.from('profiles').select('id, is_admin, is_verified', { count: 'exact' }),
-          supabase.from('listings').select('id, category', { count: 'exact' }),
-          supabase.from('comments').select('id', { count: 'exact' }),
-          supabase.from('listings').select('id, title, view_count, share_count, category').order('view_count', { ascending: false }).limit(5),
-          supabase.from('profiles').select('id, full_name, wilaya, is_verified, is_admin, created_at').order('created_at', { ascending: false }).limit(5)
+          (supabase.from('profiles') as any).select('id, is_admin, is_verified'),
+          (supabase.from('listings') as any).select('id, category'),
+          (supabase.from('comments') as any).select('id'),
+          (supabase.from('listings') as any).select('id, title, view_count, share_count, category').order('view_count', { ascending: false }).limit(5),
+          (supabase.from('profiles') as any).select('id, full_name, wilaya, is_verified, is_admin, created_at').order('created_at', { ascending: false }).limit(5)
         ]);
 
         const allListings: any[] = listingsRes.data || [];
         const allUsers: any[] = usersRes.data || [];
         setStats({
-          totalUsers: usersRes.count || 0,
+          totalUsers: allUsers.length,
           totalListings: allListings.length,
           carsCount: allListings.filter(l => l.category === 'car').length,
           bikesCount: allListings.filter(l => l.category === 'motorcycle').length,
           realEstateCount: allListings.filter(l => l.category === 'real_estate').length,
-          totalComments: commentsRes.count || 0,
+          totalComments: (commentsRes.data || []).length,
           verifiedUsers: allUsers.filter((u: any) => u.is_verified).length,
           adminCount: allUsers.filter((u: any) => u.is_admin).length,
         });
