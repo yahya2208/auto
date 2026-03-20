@@ -36,15 +36,18 @@ const RegisterScreen = () => {
         data: {
           full_name: data.full_name,
           phone_number: data.phone_number,
-          wilaya: data.wilaya,
+          wilaya: data.wilaya || 'غير محدد',
           qr_code_token: qrToken,
         }
       }
     });
 
     if (authError) {
+      console.error('[AUTH] SignUp error:', authError);
       if (authError.message.includes('already registered')) {
         setErrorMsg('هذا البريد الإلكتروني مسجل مسبقاً.');
+      } else if (authError.message.includes('Database error')) {
+        setErrorMsg('خطأ في قاعدة البيانات أثناء حفظ البيانات. يرجى تجربة بريد إلكتروني مختلف أو التواصل مع الدعم.');
       } else {
         setErrorMsg('تأكد من صحة البيانات: ' + authError.message);
       }
