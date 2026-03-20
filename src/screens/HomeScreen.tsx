@@ -155,7 +155,7 @@ const HomeScreen = () => {
               const hasMultiple = mediaList.length > 1;
               const cover = mediaList.find((m: any) => m.is_cover)?.public_url 
                          || mediaList[0]?.public_url 
-                         || 'https://placehold.co/400x300/1a1a3a/ffffff?text=لا+توجد+صورة';
+                         || 'https://placehold.co/400x300/1a1a3a/ffffff?text=Courtier';
               const secondImage = mediaList[1]?.public_url;
                          
               return (

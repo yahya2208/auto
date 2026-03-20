@@ -177,6 +177,7 @@ const AddListingScreen = () => {
           },
           body: JSON.stringify({
             listing_id: listingId,
+            user_id: user?.id,
             media_type: isVideo ? 'video' : 'image',
             public_url: publicUrl,
             storage_path: fileName,

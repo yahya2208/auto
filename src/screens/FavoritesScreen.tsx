@@ -46,7 +46,7 @@ const FavoritesScreen = () => {
                  {/* Images are not saved in the simplified favorites, normally we'd save the cover URL too. 
                      For now we'll assume the favorites store saves the whole listing object including some media info if available */}
                  <img 
-                    src={(listing as any).listing_media?.[0]?.public_url || 'https://placehold.co/400x300/1a1a3a/ffffff?text=لا+توجد+صورة'} 
+                    src={(listing as any).listing_media?.[0]?.public_url || 'https://placehold.co/400x300/1a1a3a/ffffff?text=Courtier'} 
                     alt={listing.title} 
                     style={{ width: '100%', height: '100%', objectFit: 'cover' }} 
                  />

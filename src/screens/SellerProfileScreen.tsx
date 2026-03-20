@@ -187,7 +187,7 @@ const SellerProfileScreen = () => {
           listings.map(listing => {
             const cover = listing.listing_media?.find(m => m.is_cover)?.public_url 
                        || listing.listing_media?.[0]?.public_url 
-                       || 'https://placehold.co/400x300/1a1a3a/ffffff?text=لا+توجد+صورة';
+                       || 'https://placehold.co/400x300/1a1a3a/ffffff?text=Courtier';
             return (
               <div 
                 key={listing.id} 
