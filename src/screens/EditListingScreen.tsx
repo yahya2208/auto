@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { supabase } from '../lib/supabase';
+import { supabase, supabaseUrl, supabaseAnonKey } from '../lib/supabase';
 import { useAuthStore } from '../store/authStore';
 import { Upload, Camera, X, AlertCircle, ArrowLeft, ArrowRight, Check, Trash2 } from 'lucide-react';
 import { WILAYAS, ALL_CAR_BRANDS } from '../data';
@@ -197,8 +197,8 @@ const EditListingScreen = () => {
         await (supabase.storage.from('listings') as any).upload(fileName, file);
         const { data: { publicUrl } } = (supabase.storage.from('listings') as any).getPublicUrl(fileName);
 
-        const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
-        const SUPABASE_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY;
+        const SUPABASE_URL = supabaseUrl;
+        const SUPABASE_KEY = supabaseAnonKey;
         const { data: sessionData } = await supabase.auth.getSession();
         const token = sessionData.session?.access_token || SUPABASE_KEY;
 

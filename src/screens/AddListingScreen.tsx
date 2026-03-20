@@ -162,8 +162,8 @@ const AddListingScreen = () => {
           .getPublicUrl(fileName);
 
         // 3. Save to listing_media table using raw fetch
-        const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
-        const SUPABASE_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY;
+        const SUPABASE_URL = supabaseUrl;
+        const SUPABASE_KEY = supabaseAnonKey;
         const { data: sessionData } = await supabase.auth.getSession();
         const token = sessionData.session?.access_token || SUPABASE_KEY;
 
